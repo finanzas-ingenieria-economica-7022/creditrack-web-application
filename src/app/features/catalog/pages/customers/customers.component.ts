@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { CustomerService, Customer } from '../../../../core/services/customer.service';
 
 @Component({
@@ -303,7 +304,8 @@ export class CustomersComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private customerService: CustomerService
+    private customerService: CustomerService,
+    private route: ActivatedRoute
   ) {
     this.customerForm = this.fb.group({
       firstName: ['', Validators.required],
@@ -317,6 +319,11 @@ export class CustomersComponent implements OnInit {
 
   ngOnInit() {
     this.fetchCustomers();
+    this.route.queryParams.subscribe(params => {
+      if (params['openModal'] === 'true') {
+        this.openAddModal();
+      }
+    });
   }
 
   get f() {
