@@ -298,11 +298,217 @@ export class SimulationScheduleComponent {
   }
 
   exportPDF() {
-    alert('Función de exportación a PDF en construcción. Disponible próximamente.');
+    window.print();
   }
 
   exportExcel() {
-    alert('Función de exportación a Excel en construcción. Disponible próximamente.');
+    const sim = this.simulation;
+    const trxId = this.getTrxId();
+    const customerName = this.getCustomerName();
+    const isSoles = sim.vehiclePrice > 35000;
+    const currencySymbol = isSoles ? 'S/' : 'USD';
+
+    // Import ExcelJS dynamically to maintain tiny initial bundle size
+    import('exceljs').then((ExcelJSModule: any) => {
+      const ExcelJS = ExcelJSModule.default || ExcelJSModule;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(`Simulación TRX-${trxId}`);
+
+      worksheet.columns = [
+        { header: 'N°', key: 'month', width: 6 },
+        { header: 'Fecha', key: 'date', width: 12 },
+        { header: 'Saldo Inicial', key: 'initial', width: 15 },
+        { header: 'Interés', key: 'interest', width: 15 },
+        { header: 'Desgravamen', key: 'desgravamen', width: 15 },
+        { header: 'Seg. Vehicular', key: 'insurance', width: 15 },
+        { header: 'Portes', key: 'portes', width: 12 },
+        { header: 'Amortización', key: 'amortization', width: 15 },
+        { header: 'Cuota', key: 'cuota', width: 15 },
+        { header: 'Saldo Final', key: 'final', width: 15 },
+        { header: 'Tipo', key: 'type', width: 10 }
+      ];
+
+      // Banner Title
+      worksheet.mergeCells('A1:K1');
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'REPORTE DE SIMULACIÓN FINANCIERA — CREDISTRACK';
+      titleCell.font = { name: 'Segoe UI', size: 12, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+      worksheet.getRow(1).height = 30;
+
+      // Spacing
+      worksheet.addRow([]);
+
+      // Section titles
+      worksheet.mergeCells('A3:D3');
+      const sec1Cell = worksheet.getCell('A3');
+      sec1Cell.value = 'DATOS DEL CRÉDITO';
+      sec1Cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1E3A8A' } };
+      sec1Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } };
+
+      worksheet.mergeCells('F3:H3');
+      const sec2Cell = worksheet.getCell('F3');
+      sec2Cell.value = 'PARÁMETROS FINANCIEROS Y CARGOS';
+      sec2Cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1E3A8A' } };
+      sec2Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } };
+
+      worksheet.mergeCells('J3:K3');
+      const sec3Cell = worksheet.getCell('J3');
+      sec3Cell.value = 'INDICADORES CLAVE';
+      sec3Cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FF1E3A8A' } };
+      sec3Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } };
+
+      const setMeta = (rowIdx: number, colLabel: string, label: string, colVal: string, value: any, numFormat?: string) => {
+        const labelCell = worksheet.getCell(`${colLabel}${rowIdx}`);
+        labelCell.value = label;
+        labelCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF4B5563' } };
+
+        const valCell = worksheet.getCell(`${colVal}${rowIdx}`);
+        valCell.value = value;
+        valCell.font = { name: 'Segoe UI', size: 9, color: { argb: 'FF111827' } };
+        if (numFormat) {
+          valCell.numFormat = numFormat;
+        }
+      };
+
+      // Row 4
+      setMeta(4, 'A', 'Cliente:', 'B', customerName);
+      setMeta(4, 'F', 'Tasa Base Anual:', 'G', `${sim.interestRateType} ${(sim.interestRate * 100).toFixed(2)}%`);
+      setMeta(4, 'J', 'VAN Deudor:', 'K', sim.van, `$#,##0.00;($#,##0.00);"-"`);
+
+      // Row 5
+      const carName = sim.name.replace('Simulación ', '');
+      setMeta(5, 'A', 'Vehículo:', 'B', carName);
+      setMeta(5, 'F', 'Tasa Periodo (TEM):', 'G', sim.tem, '0.0000%');
+      setMeta(5, 'J', 'TIR de Operación:', 'K', sim.tir, '0.00%');
+
+      // Row 6
+      setMeta(6, 'A', 'Precio:', 'B', sim.vehiclePrice, `$#,##0.00`);
+      const graceText = sim.gracePeriods && sim.gracePeriods.includes('P') ? 'Parcial' : sim.gracePeriods && sim.gracePeriods.includes('T') ? 'Total' : 'Sin gracia';
+      setMeta(6, 'F', 'Período Gracia:', 'G', graceText);
+      setMeta(6, 'J', 'TCEA Proyectada:', 'K', sim.tcea, '0.00%');
+
+      // Row 7
+      setMeta(7, 'A', 'Cuota Inicial:', 'B', sim.vehiclePrice * sim.initialPaymentPercentage, `$#,##0.00`);
+      setMeta(7, 'F', 'Seg. Desgravamen:', 'G', sim.desgravamenRate, '0.000%');
+      setMeta(7, 'J', 'Moneda:', 'K', currencySymbol);
+
+      // Row 8
+      setMeta(8, 'A', 'Monto Préstamo:', 'B', sim.loanAmount, `$#,##0.00`);
+      setMeta(8, 'F', 'Seguro Vehicular:', 'G', sim.riskInsuranceRate * sim.vehiclePrice / 12, `$#,##0.00`);
+      setMeta(8, 'J', 'Plazo (Meses):', 'K', sim.termMonths);
+
+      // Row 9
+      setMeta(9, 'A', 'Cuota Balón:', 'B', sim.loanAmount * sim.finalPaymentPercentage, `$#,##0.00`);
+      setMeta(9, 'F', 'Portes:', 'G', sim.portesFee, `$#,##0.00`);
+
+      worksheet.addRow([]);
+      worksheet.addRow([]);
+
+      // Headers row (Row 12)
+      const headerRow = worksheet.addRow([
+        'N°', 'Fecha', 'Saldo Inicial', 'Interés', 'Desgravamen', 
+        'Seg. Vehicular', 'Portes', 'Amortización', 'Cuota', 'Saldo Final', 'Tipo'
+      ]);
+      headerRow.height = 25;
+      headerRow.eachCell((cell: any) => {
+        cell.font = { name: 'Segoe UI', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
+
+      let totalInterest = 0;
+      let totalDesgravamen = 0;
+      let totalInsurance = 0;
+      let totalPortes = 0;
+      let totalAmortization = 0;
+      let totalCuota = 0;
+
+      this.schedule.forEach(item => {
+        const isBal = this.isBalloonRow(item);
+        const initial = isBal ? item.balloonInitialBalance : item.regularInitialBalance;
+        const interest = isBal ? item.balloonInterest : item.regularInterest;
+        const desgravamen = isBal ? item.balloonDesgravamen : item.regularDesgravamen;
+        const insurance = item.riskInsurance;
+        const portes = item.portes;
+        const amortization = isBal ? item.balloonInitialBalance : item.regularAmortization;
+        const final = isBal ? 0.00 : item.regularFinalBalance;
+        
+        const cuota = interest + desgravamen + insurance + portes + amortization;
+        const dateStr = this.getPaymentDate(item.month);
+
+        totalInterest += interest;
+        totalDesgravamen += desgravamen;
+        totalInsurance += insurance;
+        totalPortes += portes;
+        totalAmortization += amortization;
+        totalCuota += cuota;
+
+        const row = worksheet.addRow([
+          item.month,
+          dateStr,
+          initial,
+          interest,
+          desgravamen,
+          insurance,
+          portes,
+          amortization,
+          cuota,
+          final,
+          isBal ? 'BALON' : 'BASE'
+        ]);
+
+        row.height = 20;
+
+        row.eachCell((cell: any, colNumber: number) => {
+          cell.alignment = { vertical: 'middle' };
+          cell.border = { bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } } };
+
+          if (colNumber >= 3 && colNumber <= 10) {
+            cell.numFormat = `#,##0.00`;
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          }
+
+          if (isBal) {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
+            cell.font = { name: 'Segoe UI', color: { argb: 'FFB45309' }, bold: true };
+            cell.border = { bottom: { style: 'thin', color: { argb: 'FFFDE68A' } } };
+          }
+        });
+      });
+
+      // Add Totals row
+      const totalsRow = worksheet.addRow([
+        'TOTALES', '', '', totalInterest, totalDesgravamen, 
+        totalInsurance, totalPortes, totalAmortization, totalCuota, '', ''
+      ]);
+      worksheet.mergeCells(`A${totalsRow.number}:C${totalsRow.number}`);
+      totalsRow.height = 22;
+      totalsRow.eachCell((cell: any, colNumber: number) => {
+        cell.font = { name: 'Segoe UI', bold: true, color: { argb: 'FFFFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF334155' } };
+        cell.alignment = { vertical: 'middle' };
+        if (colNumber >= 4 && colNumber <= 9) {
+          cell.numFormat = `#,##0.00`;
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        }
+      });
+
+      workbook.xlsx.writeBuffer().then((buffer: any) => {
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `Cronograma_TRX-${trxId}_${customerName.replace(/\s+/g, '_')}.xlsx`;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }).catch(err => {
+      console.error('Failed to export Excel', err);
+      alert('Error al exportar a Excel.');
+    });
   }
 
   formatCurrencySymbol(): string {
