@@ -874,17 +874,19 @@ export class HistoryComponent implements OnInit {
           let totalAmortization = 0;
           let totalCuota = 0;
 
-          schedule.forEach((item: any) => {
-            const isBal = item.month === sim.termMonths && item.balloonInitialBalance > 0;
-            const initial = isBal ? item.balloonInitialBalance : item.regularInitialBalance;
-            const interest = isBal ? item.balloonInterest : item.regularInterest;
-            const desgravamen = isBal ? item.balloonDesgravamen : item.regularDesgravamen;
+          const filteredSchedule = schedule.filter((item: any) => item.month > 0);
+
+          filteredSchedule.forEach((item: any) => {
+            const isBal = item.month === sim.termMonths;
+            const initial = item.regularInitialBalance + item.balloonInitialBalance;
+            const interest = item.regularInterest + item.balloonInterest;
+            const desgravamen = item.regularDesgravamen + item.balloonDesgravamen;
             const insurance = item.riskInsurance;
             const portes = item.portes;
-            const amortization = isBal ? item.balloonInitialBalance : item.regularAmortization;
-            const final = isBal ? 0.00 : item.regularFinalBalance;
+            const amortization = item.regularAmortization + item.balloonAmortization;
+            const final = item.regularFinalBalance + item.balloonFinalBalance;
             
-            const cuota = interest + desgravamen + insurance + portes + amortization;
+            const cuota = Math.abs(item.netCashFlow);
             const dateStr = this.getPaymentDateForExcel(item.month, sim.createdDate);
 
             totalInterest += interest;
@@ -905,7 +907,7 @@ export class HistoryComponent implements OnInit {
               amortization,
               cuota,
               final,
-              isBal ? 'BALON' : 'BASE'
+              isBal ? 'BALON' : item.graceType
             ]);
 
             row.height = 20;

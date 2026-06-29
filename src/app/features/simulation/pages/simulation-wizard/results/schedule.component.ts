@@ -92,12 +92,38 @@ interface ScheduleItem {
         </div>
       </div>
 
+      <!-- Toggle view control panel -->
+      <div class="flex items-center justify-between bg-dark-card border border-dark-border rounded-xl p-4">
+        <div class="text-xs font-semibold text-gray-400">
+          Visualización de Cronograma
+        </div>
+        <div class="flex space-x-2 bg-dark-input border border-dark-border rounded-lg p-1">
+          <button
+            type="button"
+            (click)="detailedView = false"
+            class="px-3.5 py-1.5 rounded-md text-xs font-bold transition duration-150"
+            [ngClass]="!detailedView ? 'bg-brand-primary text-white shadow-md' : 'text-gray-400 hover:text-white'"
+          >
+            Vista Resumida
+          </button>
+          <button
+            type="button"
+            (click)="detailedView = true"
+            class="px-3.5 py-1.5 rounded-md text-xs font-bold transition duration-150"
+            [ngClass]="detailedView ? 'bg-brand-primary text-white shadow-md' : 'text-gray-400 hover:text-white'"
+          >
+            Vista Detallada (Dual)
+          </button>
+        </div>
+      </div>
+
       <!-- Schedule Table -->
       <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-xl">
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr class="border-b border-dark-border text-gray-500 text-[10px] uppercase font-bold tracking-wider">
+              <!-- Header Vista Resumida -->
+              <tr *ngIf="!detailedView" class="border-b border-dark-border text-gray-500 text-[10px] uppercase font-bold tracking-wider">
                 <th class="px-4 py-4 text-center">N°</th>
                 <th class="px-4 py-4">Fecha</th>
                 <th class="px-4 py-4">Saldo Inicial</th>
@@ -109,6 +135,24 @@ interface ScheduleItem {
                 <th class="px-4 py-4">Cuota</th>
                 <th class="px-4 py-4">Saldo Final</th>
                 <th class="px-4 py-4 text-right">Tipo</th>
+              </tr>
+              <!-- Header Vista Detallada -->
+              <tr *ngIf="detailedView" class="border-b border-dark-border text-gray-500 text-[10px] uppercase font-bold tracking-wider">
+                <th class="px-3 py-4 text-center">N°</th>
+                <th class="px-3 py-4">Fecha</th>
+                <th class="px-3 py-4">S. Ini Regular</th>
+                <th class="px-3 py-4">Int Regular</th>
+                <th class="px-3 py-4">Amort Regular</th>
+                <th class="px-3 py-4">Desg Regular</th>
+                <th class="px-3 py-4">S. Ini Cuotón</th>
+                <th class="px-3 py-4">Int Cuotón</th>
+                <th class="px-3 py-4">Desg Cuotón</th>
+                <th class="px-3 py-4">Amort Cuotón</th>
+                <th class="px-3 py-4">Seg. Vehicular</th>
+                <th class="px-3 py-4">Portes</th>
+                <th class="px-3 py-4">Cuota Total</th>
+                <th class="px-3 py-4">S. Fin Total</th>
+                <th class="px-3 py-4 text-right">Tipo</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-dark-border text-xs text-gray-300">
@@ -122,59 +166,73 @@ interface ScheduleItem {
                 </td>
                 <td class="px-4 py-3.5">{{ getPaymentDate(item.month) }}</td>
                 
-                <!-- Initial Balance -->
-                <td class="px-4 py-3.5">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(isBalloonRow(item) ? item.balloonInitialBalance : item.regularInitialBalance) }}
-                </td>
-                
-                <!-- Interest -->
-                <td class="px-4 py-3.5 text-yellow-600/90 font-medium">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(isBalloonRow(item) ? item.balloonInterest : item.regularInterest) }}
-                </td>
-                
-                <!-- Desgravamen -->
-                <td class="px-4 py-3.5">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(isBalloonRow(item) ? item.balloonDesgravamen : item.regularDesgravamen) }}
-                </td>
-                
-                <!-- Seg Vehicular -->
-                <td class="px-4 py-3.5">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(item.riskInsurance) }}
-                </td>
-                
-                <!-- Portes -->
-                <td class="px-4 py-3.5">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(item.portes) }}
-                </td>
-                
-                <!-- Amortización -->
-                <td class="px-4 py-3.5">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(isBalloonRow(item) ? item.balloonInitialBalance : item.regularAmortization) }}
-                </td>
-                
-                <!-- Cuota (Amortizacion + Interes + Desgravamen + SegVehicular + Portes) -->
-                <td class="px-4 py-3.5 font-bold" [ngClass]="isBalloonRow(item) ? 'text-accent-gold' : 'text-white'">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(calculateRowCuota(item)) }}
-                </td>
-                
-                <!-- Saldo Final -->
-                <td class="px-4 py-3.5">
-                  {{ formatCurrencySymbol() }} {{ formatNumber(isBalloonRow(item) ? 0.00 : item.regularFinalBalance) }}
-                </td>
-                
+                <!-- SUMMARY VIEW CELLS -->
+                <ng-container *ngIf="!detailedView">
+                  <!-- Saldo Inicial -->
+                  <td class="px-4 py-3.5">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularInitialBalance + item.balloonInitialBalance) }}
+                  </td>
+                  <!-- Interés -->
+                  <td class="px-4 py-3.5 text-yellow-600/90 font-medium">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularInterest + item.balloonInterest) }}
+                  </td>
+                  <!-- Desgravamen -->
+                  <td class="px-4 py-3.5">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularDesgravamen + item.balloonDesgravamen) }}
+                  </td>
+                  <!-- Seg Vehicular -->
+                  <td class="px-4 py-3.5">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.riskInsurance) }}
+                  </td>
+                  <!-- Portes -->
+                  <td class="px-4 py-3.5">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.portes) }}
+                  </td>
+                  <!-- Amortización -->
+                  <td class="px-4 py-3.5">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularAmortization + item.balloonAmortization) }}
+                  </td>
+                  <!-- Cuota -->
+                  <td class="px-4 py-3.5 font-bold" [ngClass]="isBalloonRow(item) ? 'text-accent-gold' : 'text-white'">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(calculateRowCuota(item)) }}
+                  </td>
+                  <!-- Saldo Final -->
+                  <td class="px-4 py-3.5">
+                    {{ formatCurrencySymbol() }} {{ formatNumber(item.regularFinalBalance + item.balloonFinalBalance) }}
+                  </td>
+                </ng-container>
+
+                <!-- DETAILED VIEW CELLS -->
+                <ng-container *ngIf="detailedView">
+                  <td class="px-3 py-3.5">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularInitialBalance) }}</td>
+                  <td class="px-3 py-3.5 text-yellow-600/90">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularInterest) }}</td>
+                  <td class="px-3 py-3.5">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularAmortization) }}</td>
+                  <td class="px-3 py-3.5">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.regularDesgravamen) }}</td>
+                  <td class="px-3 py-3.5 text-blue-400">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.balloonInitialBalance) }}</td>
+                  <td class="px-3 py-3.5 text-yellow-600/90">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.balloonInterest) }}</td>
+                  <td class="px-3 py-3.5">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.balloonDesgravamen) }}</td>
+                  <td class="px-3 py-3.5">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.balloonAmortization) }}</td>
+                  <td class="px-3 py-3.5">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.riskInsurance) }}</td>
+                  <td class="px-3 py-3.5">{{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(item.portes) }}</td>
+                  <td class="px-3 py-3.5 font-bold" [ngClass]="isBalloonRow(item) ? 'text-accent-gold' : 'text-white'">
+                    {{ item.month === 0 ? '-' : formatCurrencySymbol() + ' ' + formatNumber(calculateRowCuota(item)) }}
+                  </td>
+                  <td class="px-3 py-3.5">{{ formatCurrencySymbol() }} {{ formatNumber(item.regularFinalBalance + item.balloonFinalBalance) }}</td>
+                </ng-container>
+
                 <!-- Tipo -->
                 <td class="px-4 py-3.5 text-right">
                   <span
                     class="inline-block px-2 py-0.5 rounded text-[8px] font-bold tracking-wider"
                     [ngClass]="isBalloonRow(item) ? 'bg-accent-gold/20 text-accent-gold border border-accent-gold/30' : 'bg-gray-800 text-gray-500'"
                   >
-                    {{ isBalloonRow(item) ? 'BALÓN' : 'BASE' }}
+                    {{ isBalloonRow(item) ? 'BALÓN' : item.month === 0 ? 'DESEMBOLSO' : item.graceType }}
                   </span>
                 </td>
               </tr>
               
-              <!-- Totals row -->
-              <tr class="bg-dark-input/20 font-bold border-t border-dark-border text-white text-xs select-none">
+              <!-- Totals row Summary -->
+              <tr *ngIf="!detailedView" class="bg-dark-input/20 font-bold border-t border-dark-border text-white text-xs select-none">
                 <td colspan="3" class="px-4 py-4 text-right uppercase tracking-wider">Totales</td>
                 <td class="px-4 py-4 text-yellow-600/90">{{ formatCurrencySymbol() }} {{ formatNumber(totals.interest) }}</td>
                 <td class="px-4 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totals.desgravamen) }}</td>
@@ -183,6 +241,23 @@ interface ScheduleItem {
                 <td class="px-4 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totals.amortization) }}</td>
                 <td class="px-4 py-4 text-brand-text">{{ formatCurrencySymbol() }} {{ formatNumber(totals.cuota) }}</td>
                 <td colspan="2" class="px-4 py-4"></td>
+              </tr>
+
+              <!-- Totals row Detailed -->
+              <tr *ngIf="detailedView" class="bg-dark-input/20 font-bold border-t border-dark-border text-white text-xs select-none">
+                <td colspan="2" class="px-3 py-4 text-right uppercase tracking-wider">Totales</td>
+                <td class="px-3 py-4"></td> <!-- SI regular -->
+                <td class="px-3 py-4 text-yellow-600/90">{{ formatCurrencySymbol() }} {{ formatNumber(totalsDetailed.regularInterest) }}</td>
+                <td class="px-3 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totalsDetailed.regularAmortization) }}</td>
+                <td class="px-3 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totalsDetailed.regularDesgravamen) }}</td>
+                <td class="px-3 py-4"></td> <!-- SI cuoton -->
+                <td class="px-3 py-4 text-yellow-600/90">{{ formatCurrencySymbol() }} {{ formatNumber(totalsDetailed.balloonInterest) }}</td>
+                <td class="px-3 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totalsDetailed.balloonDesgravamen) }}</td>
+                <td class="px-3 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totalsDetailed.balloonAmortization) }}</td>
+                <td class="px-3 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totals.insurance) }}</td>
+                <td class="px-3 py-4">{{ formatCurrencySymbol() }} {{ formatNumber(totals.portes) }}</td>
+                <td class="px-3 py-4 text-brand-text">{{ formatCurrencySymbol() }} {{ formatNumber(totals.cuota) }}</td>
+                <td colspan="2" class="px-3 py-4"></td>
               </tr>
             </tbody>
           </table>
@@ -209,6 +284,8 @@ export class SimulationScheduleComponent {
   @Output() viewIndicators = new EventEmitter<void>();
   @Output() newSimulation = new EventEmitter<void>();
 
+  detailedView = false;
+
   get simulation() {
     return this.result.simulation;
   }
@@ -227,36 +304,27 @@ export class SimulationScheduleComponent {
   }
 
   getFirstMonthRegularCuota(): number {
-    if (this.schedule.length > 0) {
-      return this.calculateRowCuota(this.schedule[0]);
-    }
-    return 0;
+    const month1 = this.schedule.find(item => item.month === 1);
+    return month1 ? this.calculateRowCuota(month1) : 0;
   }
 
   getBalloonTotalAmount(): number {
-    // Find the balloon row (which is the last item)
-    if (this.schedule.length > 0) {
-      const last = this.schedule[this.schedule.length - 1];
-      return last.balloonInitialBalance;
-    }
-    return 0;
+    const term = this.simulation.termMonths;
+    const balloonRow = this.schedule.find(item => item.month === term);
+    return balloonRow ? balloonRow.balloonInitialBalance : 0;
   }
 
   isBalloonRow(item: ScheduleItem): boolean {
-    return item.month === this.simulation.termMonths && item.balloonInitialBalance > 0;
+    return item.month === this.simulation.termMonths;
   }
 
   calculateRowCuota(item: ScheduleItem): number {
-    const isBal = this.isBalloonRow(item);
-    const interest = isBal ? item.balloonInterest : item.regularInterest;
-    const desgravamen = isBal ? item.balloonDesgravamen : item.regularDesgravamen;
-    const amort = isBal ? item.balloonInitialBalance : item.regularAmortization;
-    return interest + desgravamen + item.riskInsurance + item.portes + amort;
+    if (item.month === 0) return 0;
+    return Math.abs(item.netCashFlow);
   }
 
   getPaymentDate(monthIndex: number): string {
     const d = new Date();
-    // Use created date if available
     if (this.simulation.createdDate) {
       const parsedDate = new Date(this.simulation.createdDate);
       if (!isNaN(parsedDate.getTime())) {
@@ -267,7 +335,6 @@ export class SimulationScheduleComponent {
     return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
   }
 
-  // Totals calculations
   get totals() {
     let interest = 0;
     let desgravamen = 0;
@@ -277,16 +344,44 @@ export class SimulationScheduleComponent {
     let cuota = 0;
 
     this.schedule.forEach(item => {
-      const isBal = this.isBalloonRow(item);
-      interest += isBal ? item.balloonInterest : item.regularInterest;
-      desgravamen += isBal ? item.balloonDesgravamen : item.regularDesgravamen;
+      if (item.month === 0) return;
+      interest += item.regularInterest + item.balloonInterest;
+      desgravamen += item.regularDesgravamen + item.balloonDesgravamen;
       insurance += item.riskInsurance;
       portes += item.portes;
-      amortization += isBal ? item.balloonInitialBalance : item.regularAmortization;
-      cuota += this.calculateRowCuota(item);
+      amortization += item.regularAmortization + item.balloonAmortization;
+      cuota += Math.abs(item.netCashFlow);
     });
 
     return { interest, desgravamen, insurance, portes, amortization, cuota };
+  }
+
+  get totalsDetailed() {
+    let regularInterest = 0;
+    let regularAmortization = 0;
+    let regularDesgravamen = 0;
+    let balloonInterest = 0;
+    let balloonDesgravamen = 0;
+    let balloonAmortization = 0;
+
+    this.schedule.forEach(item => {
+      if (item.month === 0) return;
+      regularInterest += item.regularInterest;
+      regularAmortization += item.regularAmortization;
+      regularDesgravamen += item.regularDesgravamen;
+      balloonInterest += item.balloonInterest;
+      balloonDesgravamen += item.balloonDesgravamen;
+      balloonAmortization += item.balloonAmortization;
+    });
+
+    return {
+      regularInterest,
+      regularAmortization,
+      regularDesgravamen,
+      balloonInterest,
+      balloonDesgravamen,
+      balloonAmortization
+    };
   }
 
   onViewIndicators() {
@@ -427,15 +522,15 @@ export class SimulationScheduleComponent {
 
       this.schedule.forEach(item => {
         const isBal = this.isBalloonRow(item);
-        const initial = isBal ? item.balloonInitialBalance : item.regularInitialBalance;
-        const interest = isBal ? item.balloonInterest : item.regularInterest;
-        const desgravamen = isBal ? item.balloonDesgravamen : item.regularDesgravamen;
+        const initial = item.regularInitialBalance + item.balloonInitialBalance;
+        const interest = item.regularInterest + item.balloonInterest;
+        const desgravamen = item.regularDesgravamen + item.balloonDesgravamen;
         const insurance = item.riskInsurance;
         const portes = item.portes;
-        const amortization = isBal ? item.balloonInitialBalance : item.regularAmortization;
-        const final = isBal ? 0.00 : item.regularFinalBalance;
+        const amortization = item.regularAmortization + item.balloonAmortization;
+        const final = item.regularFinalBalance + item.balloonFinalBalance;
         
-        const cuota = interest + desgravamen + insurance + portes + amortization;
+        const cuota = Math.abs(item.netCashFlow);
         const dateStr = this.getPaymentDate(item.month);
 
         totalInterest += interest;
@@ -456,7 +551,7 @@ export class SimulationScheduleComponent {
           amortization,
           cuota,
           final,
-          isBal ? 'BALON' : 'BASE'
+          isBal ? 'BALON' : item.graceType
         ]);
 
         row.height = 20;
@@ -512,8 +607,6 @@ export class SimulationScheduleComponent {
   }
 
   formatCurrencySymbol(): string {
-    // Soles or dollars based on simulation params
-    // Let's decide based on price thresholds or fallback to soles
     return this.simulation.vehiclePrice <= 35000 ? 'USD' : 'S/';
   }
 

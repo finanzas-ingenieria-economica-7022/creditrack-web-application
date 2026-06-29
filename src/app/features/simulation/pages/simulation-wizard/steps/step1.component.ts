@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Customer } from '../../../../../core/services/customer.service';
@@ -132,6 +132,51 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
           </div>
         </div>
 
+        <!-- Gastos Iniciales Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          <!-- GASTOS NOTARIALES -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Gastos Notariales</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-gray-500 font-medium text-sm">{{ formatCurrencySymbol() }}</span>
+              <input
+                type="number"
+                formControlName="notaryCost"
+                (input)="calculateInitialPayment()"
+                class="w-full pl-9 pr-4 py-2.5 bg-dark-input border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-primary text-sm font-semibold transition duration-150"
+              />
+            </div>
+          </div>
+
+          <!-- GASTOS REGISTRALES -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Gastos Registrales</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-gray-500 font-medium text-sm">{{ formatCurrencySymbol() }}</span>
+              <input
+                type="number"
+                formControlName="registrationCost"
+                (input)="calculateInitialPayment()"
+                class="w-full pl-9 pr-4 py-2.5 bg-dark-input border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-primary text-sm font-semibold transition duration-150"
+              />
+            </div>
+          </div>
+
+          <!-- TASACIÓN -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Tasación</label>
+            <div class="relative flex items-center">
+              <span class="absolute left-3.5 text-gray-500 font-medium text-sm">{{ formatCurrencySymbol() }}</span>
+              <input
+                type="number"
+                formControlName="appraisalCost"
+                (input)="calculateInitialPayment()"
+                class="w-full pl-9 pr-4 py-2.5 bg-dark-input border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-primary text-sm font-semibold transition duration-150"
+              />
+            </div>
+          </div>
+        </div>
+
         <hr class="border-dark-border" />
 
         <!-- PLAZO (MESES) Slider -->
@@ -182,7 +227,7 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
     </div>
   `
 })
-export class SimulationStep1Component {
+export class SimulationStep1Component implements OnInit {
   @Input() parentForm!: FormGroup;
   @Input() customers: Customer[] = [];
   @Input() vehicles: Vehicle[] = [];
@@ -193,6 +238,19 @@ export class SimulationStep1Component {
   vehiclePrice = 0;
   initialPaymentAmount = 0;
   amountToFinance = 0;
+
+  ngOnInit() {
+    // Recalculate on load
+    const vehId = Number(this.parentForm.get('vehicleId')?.value);
+    if (vehId) {
+      this.onVehicleChange();
+    }
+    const custId = Number(this.parentForm.get('customerId')?.value);
+    if (custId) {
+      this.onCustomerChange();
+    }
+    this.calculateInitialPayment();
+  }
 
   onCustomerChange() {
     const custId = Number(this.parentForm.get('customerId')?.value);
@@ -219,8 +277,12 @@ export class SimulationStep1Component {
 
   calculateInitialPayment() {
     const pct = this.parentForm.get('initialPaymentPercentage')?.value || 0;
+    const notary = this.parentForm.get('notaryCost')?.value || 0;
+    const registration = this.parentForm.get('registrationCost')?.value || 0;
+    const appraisal = this.parentForm.get('appraisalCost')?.value || 0;
+
     this.initialPaymentAmount = (this.vehiclePrice * pct) / 100;
-    this.amountToFinance = Math.max(0, this.vehiclePrice - this.initialPaymentAmount);
+    this.amountToFinance = Math.max(0, (this.vehiclePrice - this.initialPaymentAmount) + notary + registration + appraisal);
   }
 
   isInvalid(): boolean {
