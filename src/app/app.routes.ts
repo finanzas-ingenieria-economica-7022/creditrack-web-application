@@ -7,6 +7,7 @@ import { DashboardComponent } from './features/analytics/pages/dashboard/dashboa
 import { CustomersComponent } from './features/catalog/pages/customers/customers.component';
 import { VehiclesComponent } from './features/catalog/pages/vehicles/vehicles.component';
 import { SimulationWizardComponent } from './features/simulation/pages/simulation-wizard/simulation-wizard.component';
+import { HistoryComponent } from './features/simulation/pages/history/history.component';
 import { authGuard } from './core/guards/auth.guard';
 import { Component } from '@angular/core';
 
@@ -40,7 +41,7 @@ export const routes: Routes = [
       { path: 'clientes', component: CustomersComponent },
       { path: 'vehiculos', component: VehiclesComponent },
       { path: 'simulaciones', component: SimulationWizardComponent },
-      { path: 'historial', component: PlaceholderComponent },
+      { path: 'historial', component: HistoryComponent },
       { path: 'configuracion', component: PlaceholderComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

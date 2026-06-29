@@ -167,6 +167,9 @@ export class SimulationWizardComponent implements OnInit {
       capitalizationType: [null],
       currency: ['PEN', Validators.required],
       graceType: ['S', Validators.required], // 'S' = Sin gracia, 'P' = Parcial, 'T' = Total
+      notaryCost: [100.00, [Validators.required, Validators.min(0)]],
+      registrationCost: [75.00, [Validators.required, Validators.min(0)]],
+      appraisalCost: [150.00, [Validators.required, Validators.min(0)]],
       desgravamenRate: [0.050, Validators.required],
       riskInsuranceRate: [80.00, Validators.required],
       portesFee: [10.00, Validators.required]
@@ -311,10 +314,10 @@ export class SimulationWizardComponent implements OnInit {
       paymentFrequency: 30,
       daysPerYear: 360,
       
-      // Capitalized fees are 0
-      notaryCost: 0.0,
-      registrationCost: 0.0,
-      appraisalCost: 0.0,
+      // Capitalized fees
+      notaryCost: formVal.notaryCost,
+      registrationCost: formVal.registrationCost,
+      appraisalCost: formVal.appraisalCost,
       studyCommission: 0.0,
       activationCommission: 0.0,
       
