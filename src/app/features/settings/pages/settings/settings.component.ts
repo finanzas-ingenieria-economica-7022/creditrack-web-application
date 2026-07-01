@@ -624,8 +624,33 @@ export class SettingsComponent implements OnInit {
     this.loadPrefsFromStorage();
     this.financialEntityService.getAll().pipe(catchError(() => of([]))).subscribe((entities) => {
       this.financialEntities = entities;
-      if (!this.prefs.defaultBankId && entities.length > 0) {
+
+      const hasInterbank = entities.some(e => e.name.toLowerCase() === 'interbank');
+      const hasBcp = entities.some(e => e.name.toLowerCase() === 'bcp');
+
+      if (!hasInterbank) {
+        this.financialEntityService.create({ name: 'Interbank', standardTea: 14.0 }).subscribe({
+          next: () => this.refreshEntities()
+        });
+      }
+
+      if (!hasBcp) {
+        this.financialEntityService.create({ name: 'BCP', standardTea: 12.5 }).subscribe({
+          next: () => this.refreshEntities()
+        });
+      }
+
+      if (entities.length > 0 && !this.prefs.defaultBankId) {
         this.prefs.defaultBankId = entities[0].id;
+      }
+    });
+  }
+
+  refreshEntities() {
+    this.financialEntityService.getAll().pipe(catchError(() => of([]))).subscribe((all) => {
+      this.financialEntities = all;
+      if (!this.prefs.defaultBankId && all.length > 0) {
+        this.prefs.defaultBankId = all[0].id;
       }
     });
   }

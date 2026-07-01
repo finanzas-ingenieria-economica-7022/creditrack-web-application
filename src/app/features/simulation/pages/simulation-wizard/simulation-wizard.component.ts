@@ -155,24 +155,47 @@ export class SimulationWizardComponent implements OnInit {
   }
 
   initForm() {
+    let defaultTea = 14;
+    let defaultTerm = 36;
+    let defaultCurrency = 'PEN';
+    let defaultDesgravamen = 0.050;
+    let defaultPortes = 10.00;
+    let defaultBankId = null;
+
+    const saved = localStorage.getItem('creditrack_prefs');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.defaultTea !== undefined) defaultTea = Number(parsed.defaultTea);
+        if (parsed.defaultTerm !== undefined) defaultTerm = Number(parsed.defaultTerm);
+        if (parsed.defaultCurrency !== undefined) defaultCurrency = parsed.defaultCurrency;
+        if (parsed.defaultDesgravamen !== undefined) defaultDesgravamen = Number(parsed.defaultDesgravamen);
+        if (parsed.defaultPortes !== undefined) defaultPortes = Number(parsed.defaultPortes);
+        if (parsed.defaultBankId !== undefined) {
+          defaultBankId = Number(parsed.defaultBankId);
+          this.defaultEntityId = defaultBankId;
+        }
+      } catch (e) {}
+    }
+
     this.simulationForm = this.fb.group({
       customerId: [null, Validators.required],
       vehicleId: [null, Validators.required],
       vehiclePrice: [0],
       initialPaymentPercentage: [20, [Validators.required, Validators.min(10), Validators.max(90)]],
       finalPaymentPercentage: [40, [Validators.required, Validators.min(0), Validators.max(100)]],
-      termMonths: [36, Validators.required],
-      interestRate: [14, [Validators.required, Validators.min(1)]],
+      termMonths: [defaultTerm, Validators.required],
+      interestRate: [defaultTea, [Validators.required, Validators.min(1)]],
       interestRateType: ['TEA', Validators.required],
       capitalizationType: [null],
-      currency: ['PEN', Validators.required],
+      currency: [defaultCurrency, Validators.required],
       graceType: ['S', Validators.required], // 'S' = Sin gracia, 'P' = Parcial, 'T' = Total
       notaryCost: [100.00, [Validators.required, Validators.min(0)]],
       registrationCost: [75.00, [Validators.required, Validators.min(0)]],
       appraisalCost: [150.00, [Validators.required, Validators.min(0)]],
-      desgravamenRate: [0.050, Validators.required],
+      desgravamenRate: [defaultDesgravamen, Validators.required],
       riskInsuranceRate: [80.00, Validators.required],
-      portesFee: [10.00, Validators.required]
+      portesFee: [defaultPortes, Validators.required]
     });
   }
 
@@ -203,19 +226,52 @@ export class SimulationWizardComponent implements OnInit {
     this.financialEntityService.getAll().subscribe({
       next: (entities) => {
         this.financialEntities = entities;
-        if (this.financialEntities.length > 0) {
-          this.defaultEntityId = this.financialEntities[0].id || 1;
-        } else {
-          // Seed standard bank
-          this.financialEntityService.create({ name: 'Interbank', standardTea: 14.0 }).subscribe({
-            next: (saved) => {
-              this.defaultEntityId = saved.id || 1;
+
+        const saved = localStorage.getItem('creditrack_prefs');
+        let defaultBankId = null;
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.defaultBankId !== undefined) {
+              defaultBankId = Number(parsed.defaultBankId);
             }
+          } catch (e) {}
+        }
+
+        const hasInterbank = entities.some(e => e.name.toLowerCase() === 'interbank');
+        const hasBcp = entities.some(e => e.name.toLowerCase() === 'bcp');
+
+        if (!hasInterbank) {
+          this.financialEntityService.create({ name: 'Interbank', standardTea: 14.0 }).subscribe({
+            next: () => this.refreshEntitiesWizard(defaultBankId)
           });
+        }
+
+        if (!hasBcp) {
+          this.financialEntityService.create({ name: 'BCP', standardTea: 12.5 }).subscribe({
+            next: () => this.refreshEntitiesWizard(defaultBankId)
+          });
+        }
+
+        if (entities.length > 0) {
+          const exists = defaultBankId ? entities.some(e => e.id === defaultBankId) : false;
+          this.defaultEntityId = exists && defaultBankId ? defaultBankId : (entities[0].id || 1);
+        } else {
+          this.defaultEntityId = 1;
         }
       },
       error: () => {
         this.defaultEntityId = 1;
+      }
+    });
+  }
+
+  refreshEntitiesWizard(defaultBankId: number | null) {
+    this.financialEntityService.getAll().subscribe({
+      next: (all) => {
+        this.financialEntities = all;
+        const exists = defaultBankId ? all.some(e => e.id === defaultBankId) : false;
+        this.defaultEntityId = exists && defaultBankId ? defaultBankId : (all[0].id || 1);
       }
     });
   }
