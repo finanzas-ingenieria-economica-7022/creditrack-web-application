@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Component } from '@angular/core';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 
@@ -9,59 +9,53 @@ import { AuthService } from '../../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-dark-bg px-4">
-      <div class="w-full max-w-md bg-dark-card border border-dark-border rounded-xl p-8 shadow-2xl">
-        <!-- Header -->
-        <div class="text-center mb-6">
-          <div class="flex justify-center items-center space-x-3 mb-2">
-            <div class="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <div>
-              <h1 class="text-white font-bold text-2xl tracking-wide leading-none">CrediTrack</h1>
-              <span class="text-xs text-gray-500 block text-left">Internal Banking</span>
-            </div>
+    <div class="iam-screen">
+      <div class="iam-card px-8 py-8 sm:px-10">
+        <div class="text-center">
+          <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-primary shadow-lg shadow-blue-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
           </div>
-          <p class="text-sm text-gray-400">Sistema de créditos vehiculares</p>
+          <h1 class="text-2xl font-bold tracking-tight text-white">CrediTrack</h1>
+          <p class="text-xs text-gray-500">Internal Banking</p>
+          <p class="mt-3 text-sm text-gray-400">Acceso al sistema IAM</p>
         </div>
 
-        <hr class="border-dark-border mb-6" />
+        <div class="my-6 h-px bg-dark-border"></div>
 
-        <!-- Form -->
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
-          <!-- Email Input -->
           <div>
-            <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Correo Electrónico</label>
+            <label class="iam-label" for="email">Correo electrónico</label>
             <input
+              id="email"
               type="email"
               formControlName="email"
               placeholder="asesor@banco.com.pe"
-              class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-              [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['email'].errors }"
+              class="iam-input"
+              [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['email'].invalid }"
             />
-            <div *ngIf="submitted && f['email'].errors" class="text-red-500 text-xs mt-1">
-              <span *ngIf="f['email'].errors['required']">El correo es obligatorio.</span>
-              <span *ngIf="f['email'].errors['email']">Ingrese un correo válido.</span>
-            </div>
+            <p *ngIf="submitted && f['email'].errors" class="mt-1 text-xs text-red-400">
+              <span *ngIf="f['email'].errors?.['required']">El correo es obligatorio.</span>
+              <span *ngIf="f['email'].errors?.['email']">Ingresa un correo válido.</span>
+            </p>
           </div>
 
-          <!-- Password Input -->
           <div>
-            <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Contraseña</label>
+            <label class="iam-label" for="password">Contraseña</label>
             <div class="relative">
               <input
+                id="password"
                 [type]="showPassword ? 'text' : 'password'"
                 formControlName="password"
                 placeholder="••••••••"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': (submitted && f['password'].errors) || loginError }"
+                class="iam-input pr-12"
+                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['password'].invalid }"
               />
               <button
                 type="button"
                 (click)="togglePasswordVisibility()"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 focus:outline-none"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-gray-300"
               >
                 <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -72,42 +66,32 @@ import { AuthService } from '../../../../core/services/auth.service';
                 </svg>
               </button>
             </div>
-            <div *ngIf="submitted && f['password'].errors" class="text-red-500 text-xs mt-1">
-              <span *ngIf="f['password'].errors['required']">La contraseña es obligatoria.</span>
-            </div>
+            <p *ngIf="submitted && f['password'].errors" class="mt-1 text-xs text-red-400">
+              La contraseña es obligatoria.
+            </p>
           </div>
 
-          <!-- Error Alert Card (V02 style) -->
-          <div *ngIf="loginError" class="bg-status-rejected-bg border border-red-900 rounded-lg p-4 text-white flex items-start space-x-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-status-rejected-text flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-            <div class="text-xs">
-              <p class="font-bold text-white mb-0.5">Correo o contraseña incorrectos.</p>
-              <p class="text-gray-300">Intento {{ attemptCount }} de 5. Tras 5 intentos la cuenta se bloqueará.</p>
-            </div>
+          <div *ngIf="loginError" class="rounded-xl border border-red-900 bg-status-rejected-bg/80 p-4 text-sm text-gray-100">
+            <p class="font-semibold text-white">No se pudo iniciar sesión.</p>
+            <p class="mt-1 text-xs text-gray-300">{{ loginError }}</p>
           </div>
 
-          <!-- Keep Signed In & Forgot Password -->
-          <div class="flex items-center justify-between text-xs">
-            <label class="flex items-center space-x-2 text-gray-400 cursor-pointer">
+          <div class="flex items-center justify-between text-xs text-gray-400">
+            <label class="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
                 formControlName="keepSignedIn"
-                class="rounded bg-dark-input border-dark-border text-brand-primary focus:ring-0 focus:ring-offset-0 w-4 h-4 cursor-pointer"
+                class="h-4 w-4 rounded border-dark-border bg-dark-input text-brand-primary focus:ring-0 focus:ring-offset-0"
               />
               <span>Mantener sesión</span>
             </label>
-            <a routerLink="/recover-password" class="text-brand-text hover:underline">¿Olvidaste tu contraseña?</a>
+            <a routerLink="/recover-password" class="font-medium text-brand-text hover:underline">
+              ¿Olvidaste tu contraseña?
+            </a>
           </div>
 
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            [disabled]="loading"
-            class="w-full py-3 bg-brand-primary hover:bg-brand-hover text-white font-bold rounded-lg transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg *ngIf="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <button type="submit" [disabled]="loading" class="iam-button-primary flex items-center justify-center gap-2">
+            <svg *ngIf="loading" class="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -115,12 +99,9 @@ import { AuthService } from '../../../../core/services/auth.service';
           </button>
         </form>
 
-        <p class="text-center text-xs text-gray-400 mt-6">
-          ¿No tienes una cuenta? <a routerLink="/register" class="text-brand-text hover:underline font-semibold">Regístrate aquí</a>
-        </p>
-
-        <p class="text-center text-[10px] text-gray-600 mt-6">
-          Acceso restringido — uso exclusivo del asesor autorizado
+        <p class="mt-6 text-center text-xs text-gray-400">
+          ¿No tienes una cuenta?
+          <a routerLink="/register" class="font-semibold text-brand-text hover:underline">Solicitar acceso</a>
         </p>
       </div>
     </div>
@@ -131,8 +112,7 @@ export class LoginComponent {
   submitted = false;
   loading = false;
   showPassword = false;
-  loginError = false;
-  attemptCount = 0;
+  loginError = '';
 
   constructor(
     private fb: FormBuilder,
@@ -142,7 +122,7 @@ export class LoginComponent {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
-      keepSignedIn: [false]
+      keepSignedIn: [true]
     });
   }
 
@@ -150,35 +130,33 @@ export class LoginComponent {
     return this.loginForm.controls;
   }
 
-  togglePasswordVisibility() {
+  togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
-  onSubmit() {
+  onSubmit(): void {
     this.submitted = true;
-    this.loginError = false;
+    this.loginError = '';
 
     if (this.loginForm.invalid) {
       return;
     }
 
     this.loading = true;
-    const emailValue = this.loginForm.value.email;
-    const passwordValue = this.loginForm.value.password;
+    const { email, password } = this.loginForm.getRawValue() as {
+      email: string;
+      password: string;
+      keepSignedIn: boolean;
+    };
 
-    // Use email as username for authentication endpoint
-    this.authService.login(emailValue, passwordValue).subscribe({
-      next: (response) => {
+    this.authService.login(email, password).subscribe({
+      next: () => {
         this.loading = false;
-        this.router.navigate(['/dashboard']);
+        void this.router.navigate(['/dashboard']);
       },
-      error: (err) => {
+      error: (error) => {
         this.loading = false;
-        this.loginError = true;
-        this.attemptCount++;
-        if (this.attemptCount >= 5) {
-          // Additional lockout visual indicators can go here
-        }
+        this.loginError = error?.error?.message ?? 'Credenciales inválidas.';
       }
     });
   }

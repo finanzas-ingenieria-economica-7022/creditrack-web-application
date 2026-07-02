@@ -2,6 +2,11 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './features/iam/pages/login/login.component';
 import { RegisterComponent } from './features/iam/pages/register/register.component';
 import { RecoverPasswordComponent } from './features/iam/pages/recover-password/recover-password.component';
+import { ResetPasswordComponent } from './features/iam/pages/reset-password/reset-password.component';
+import { ProfileComponent } from './features/iam/pages/profile/profile.component';
+import { ChangePasswordComponent } from './features/iam/pages/change-password/change-password.component';
+import { UsersComponent } from './features/iam/pages/users/users.component';
+import { RolesComponent } from './features/iam/pages/roles/roles.component';
 import { MainLayoutComponent } from './core/layout/main-layout/main-layout.component';
 import { DashboardComponent } from './features/analytics/pages/dashboard/dashboard.component';
 import { CustomersComponent } from './features/catalog/pages/customers/customers.component';
@@ -9,6 +14,7 @@ import { VehiclesComponent } from './features/catalog/pages/vehicles/vehicles.co
 import { SimulationWizardComponent } from './features/simulation/pages/simulation-wizard/simulation-wizard.component';
 import { HistoryComponent } from './features/simulation/pages/history/history.component';
 import { authGuard } from './core/guards/auth.guard';
+import { permissionGuard } from './core/guards/permission.guard';
 import { Component } from '@angular/core';
 
 // Inline placeholder for features implemented in subsequent iterations
@@ -32,6 +38,7 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'recover-password', component: RecoverPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   {
     path: '',
     component: MainLayoutComponent,
@@ -42,6 +49,30 @@ export const routes: Routes = [
       { path: 'vehiculos', component: VehiclesComponent },
       { path: 'simulaciones', component: SimulationWizardComponent },
       { path: 'historial', component: HistoryComponent },
+      {
+        path: 'perfil',
+        component: ProfileComponent,
+        canActivate: [permissionGuard],
+        data: { permissions: ['profile:read'] }
+      },
+      {
+        path: 'cambiar-contrasena',
+        component: ChangePasswordComponent,
+        canActivate: [permissionGuard],
+        data: { permissions: ['password:change'] }
+      },
+      {
+        path: 'usuarios',
+        component: UsersComponent,
+        canActivate: [permissionGuard],
+        data: { permissions: ['user:read'] }
+      },
+      {
+        path: 'roles',
+        component: RolesComponent,
+        canActivate: [permissionGuard],
+        data: { permissions: ['role:read'] }
+      },
       { path: 'configuracion', component: PlaceholderComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
