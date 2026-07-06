@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RoleResponse, UserResponse } from '../../../../core/models/iam.models';
+import { CreateUserRequest, UpdateUserRequest, UserResponse } from '../../../../core/models/iam.models';
 import { RoleService } from '../../../../core/services/role.service';
 import { UserService } from '../../../../core/services/user.service';
 
@@ -354,7 +354,7 @@ export class UsersComponent implements OnInit {
       password: string;
     };
 
-    const payload = {
+    const commonPayload = {
       username: values.username,
       email: values.email,
       role: values.role,
@@ -363,13 +363,18 @@ export class UsersComponent implements OnInit {
       lastName: values.lastName,
       documentType: values.documentType,
       documentNumber: values.documentNumber,
-      phoneNumber: values.phoneNumber || null,
-      ...(values.password ? { password: values.password } : {})
+      phoneNumber: values.phoneNumber || null
     };
 
     const request$ = this.editingUserId === null
-      ? this.userService.create(payload)
-      : this.userService.update(this.editingUserId, payload);
+      ? this.userService.create({
+          ...commonPayload,
+          password: values.password
+        } as CreateUserRequest)
+      : this.userService.update(this.editingUserId, {
+          ...commonPayload,
+          ...(values.password ? { password: values.password } : {})
+        } as UpdateUserRequest);
 
     request$.subscribe({
       next: () => {
