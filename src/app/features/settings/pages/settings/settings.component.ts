@@ -303,25 +303,32 @@ type SettingsTab = 'perfil' | 'preferencias' | 'seguridad';
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div
               *ngFor="let entity of financialEntities"
-              (click)="prefs.defaultBankId = entity.id"
+              (click)="selectBank(entity.id)"
               [id]="'pref-bank-' + entity.id"
               class="p-4 rounded-xl border cursor-pointer transition duration-150"
               [ngClass]="prefs.defaultBankId === entity.id
                 ? 'border-brand-primary bg-brand-primary/10'
                 : 'border-dark-border bg-dark-input hover:border-gray-600'"
             >
-              <div class="flex items-center gap-3">
+              <div class="flex items-start gap-3">
                 <div
-                  class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0"
+                  class="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0 mt-0.5"
                   [ngClass]="prefs.defaultBankId === entity.id ? 'bg-brand-primary' : 'bg-gray-700'"
                 >
                   {{ entity.name.substring(0, 2).toUpperCase() }}
                 </div>
-                <div>
-                  <p class="text-white text-sm font-semibold">{{ entity.name }}</p>
-                  <p class="text-gray-500 text-[10px]">TEA: {{ (entity.standardTea * 100).toFixed(2) }}%</p>
+                <div class="space-y-1">
+                  <p class="text-white text-sm font-bold">{{ entity.name }}</p>
+                  <div class="text-[10px] text-gray-500 space-y-0.5 font-mono leading-tight">
+                    <div>TEA: <span class="text-gray-300 font-bold">{{ getBankPref(entity.id, 'defaultTea', entity.standardTea) | number:'1.2-2' }}%</span></div>
+                    <div>COK: <span class="text-gray-300 font-bold">{{ getBankPref(entity.id, 'defaultCok', 12.0) | number:'1.2-2' }}%</span></div>
+                    <div>Desgravamen: <span class="text-gray-300 font-bold">{{ getBankPref(entity.id, 'defaultDesgravamen', 0.05) | number:'1.3-3' }}%</span></div>
+                    <div>Vehicular: <span class="text-gray-300 font-bold">{{ getBankPref(entity.id, 'defaultInsurance', 0.30) | number:'1.3-3' }}%</span></div>
+                    <div>Portes: <span class="text-gray-300 font-bold">S/ {{ getBankPref(entity.id, 'defaultPortes', 10.0) | number:'1.2-2' }}</span></div>
+                    <div>Plazo: <span class="text-gray-300 font-bold">{{ getBankPref(entity.id, 'defaultTerm', 36) }} meses</span></div>
+                  </div>
                 </div>
-                <div *ngIf="prefs.defaultBankId === entity.id" class="ml-auto text-brand-primary">
+                <div *ngIf="prefs.defaultBankId === entity.id" class="ml-auto text-brand-primary mt-1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -585,7 +592,15 @@ export class SettingsComponent implements OnInit {
     defaultTerm: 36,
     defaultBankId: undefined as number | undefined,
     defaultCurrency: 'PEN' as 'PEN' | 'USD',
-    dateFormat: 'DD/MM/YYYY'
+    dateFormat: 'DD/MM/YYYY',
+    bankSettings: {} as Record<number, {
+      defaultTea: number;
+      defaultCok: number;
+      defaultDesgravamen: number;
+      defaultInsurance: number;
+      defaultPortes: number;
+      defaultTerm: number;
+    }>
   };
   private _prefsSnapshot = { ...this.prefs };
 
@@ -622,12 +637,94 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit() {
     this.loadPrefsFromStorage();
+    if (!this.prefs.bankSettings) {
+      this.prefs.bankSettings = {};
+    }
     this.financialEntityService.getAll().pipe(catchError(() => of([]))).subscribe((entities) => {
       this.financialEntities = entities;
       if (!this.prefs.defaultBankId && entities.length > 0) {
         this.prefs.defaultBankId = entities[0].id;
       }
+
+      // Initialize bank-specific settings if not already present
+      entities.forEach(b => {
+        const bs = this.prefs.bankSettings;
+        if (b.id && !bs[b.id]) {
+          bs[b.id] = {
+            defaultTea: b.standardTea != null ? b.standardTea : 14.00,
+            defaultCok: 12.00,
+            defaultDesgravamen: 0.050,
+            defaultInsurance: 0.300,
+            defaultPortes: 10.00,
+            defaultTerm: 36
+          };
+        }
+      });
+
+      // Load form fields from the selected preferred bank settings
+      const bs = this.prefs.bankSettings;
+      if (this.prefs.defaultBankId && bs[this.prefs.defaultBankId]) {
+        const s = bs[this.prefs.defaultBankId];
+        this.prefs.defaultTea = s.defaultTea;
+        this.prefs.defaultCok = s.defaultCok;
+        this.prefs.defaultDesgravamen = s.defaultDesgravamen;
+        this.prefs.defaultInsurance = s.defaultInsurance;
+        this.prefs.defaultPortes = s.defaultPortes;
+        this.prefs.defaultTerm = s.defaultTerm;
+      }
     });
+  }
+
+  selectBank(bankId: number | undefined) {
+    if (bankId === undefined) return;
+    if (!this.prefs.bankSettings) {
+      this.prefs.bankSettings = {};
+    }
+    const bs = this.prefs.bankSettings;
+
+    // 1. Save current form values to the old bank before switching
+    if (this.prefs.defaultBankId && bs[this.prefs.defaultBankId]) {
+      bs[this.prefs.defaultBankId] = {
+        defaultTea: this.prefs.defaultTea,
+        defaultCok: this.prefs.defaultCok,
+        defaultDesgravamen: this.prefs.defaultDesgravamen,
+        defaultInsurance: this.prefs.defaultInsurance,
+        defaultPortes: this.prefs.defaultPortes,
+        defaultTerm: Number(this.prefs.defaultTerm)
+      };
+    }
+
+    // 2. Switch bank ID
+    this.prefs.defaultBankId = bankId;
+
+    // 3. Load settings for the new bank
+    if (!bs[bankId]) {
+      const bank = this.financialEntities.find(b => b.id === bankId);
+      bs[bankId] = {
+        defaultTea: bank ? bank.standardTea : 14.00,
+        defaultCok: 12.00,
+        defaultDesgravamen: 0.050,
+        defaultInsurance: 0.300,
+        defaultPortes: 10.00,
+        defaultTerm: 36
+      };
+    }
+
+    const s = bs[bankId];
+    this.prefs.defaultTea = s.defaultTea;
+    this.prefs.defaultCok = s.defaultCok;
+    this.prefs.defaultDesgravamen = s.defaultDesgravamen;
+    this.prefs.defaultInsurance = s.defaultInsurance;
+    this.prefs.defaultPortes = s.defaultPortes;
+    this.prefs.defaultTerm = s.defaultTerm;
+  }
+
+  getBankPref(bankId: number | undefined, key: string, fallback: number): number {
+    if (!bankId || !this.prefs.bankSettings || !this.prefs.bankSettings[bankId]) {
+      return fallback;
+    }
+    const s = this.prefs.bankSettings[bankId] as any;
+    return s[key] !== undefined ? s[key] : fallback;
   }
 
   // Helpers
@@ -672,14 +769,38 @@ export class SettingsComponent implements OnInit {
   }
 
   savePrefs() {
+    if (this.prefs.defaultBankId) {
+      if (!this.prefs.bankSettings) {
+        this.prefs.bankSettings = {};
+      }
+      const bs = this.prefs.bankSettings;
+      bs[this.prefs.defaultBankId] = {
+        defaultTea: this.prefs.defaultTea,
+        defaultCok: this.prefs.defaultCok,
+        defaultDesgravamen: this.prefs.defaultDesgravamen,
+        defaultInsurance: this.prefs.defaultInsurance,
+        defaultPortes: this.prefs.defaultPortes,
+        defaultTerm: Number(this.prefs.defaultTerm)
+      };
+    }
     localStorage.setItem('creditrack_prefs', JSON.stringify(this.prefs));
-    this._prefsSnapshot = { ...this.prefs };
+    this._prefsSnapshot = JSON.parse(JSON.stringify(this.prefs));
     this.prefsSaved = true;
     setTimeout(() => { this.prefsSaved = false; }, 3000);
   }
 
   discardPrefs() {
-    this.prefs = { ...this._prefsSnapshot };
+    this.prefs = JSON.parse(JSON.stringify(this._prefsSnapshot));
+    const bs = this.prefs.bankSettings;
+    if (this.prefs.defaultBankId && bs && bs[this.prefs.defaultBankId]) {
+      const s = bs[this.prefs.defaultBankId];
+      this.prefs.defaultTea = s.defaultTea;
+      this.prefs.defaultCok = s.defaultCok;
+      this.prefs.defaultDesgravamen = s.defaultDesgravamen;
+      this.prefs.defaultInsurance = s.defaultInsurance;
+      this.prefs.defaultPortes = s.defaultPortes;
+      this.prefs.defaultTerm = s.defaultTerm;
+    }
   }
 
   // Security tab
