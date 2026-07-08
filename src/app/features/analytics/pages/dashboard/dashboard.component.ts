@@ -252,7 +252,8 @@ export class DashboardComponent implements OnInit {
       });
 
       // KPI Cards
-      const totalSims = (simulations as any[]).length;
+      const simsArray = (simulations as any)?.content || simulations || [];
+      const totalSims = simsArray.length;
       this.totalSimulationsDisplay = String(totalSims).padStart(2, '0');
       this.registeredClientsDisplay = String((customers as any[]).length).padStart(2, '0');
 
@@ -262,8 +263,8 @@ export class DashboardComponent implements OnInit {
         // TCEA from metrics DB is now stored as percentage (e.g., 14.0)
         this.avgTceaDisplay = Number(m.averageTcea).toFixed(1) + '%';
       } else if (totalSims > 0) {
-        const totalLoan = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.financedAmount || 0), 0);
-        const totalTcea = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.tceaPercent || 0), 0);
+        const totalLoan = simsArray.reduce((sum: number, s: any) => sum + (s.financedAmount || 0), 0);
+        const totalTcea = simsArray.reduce((sum: number, s: any) => sum + (s.tceaPercent || 0), 0);
         this.avgLoanAmountDisplay = 'S/ ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(totalLoan / totalSims);
         this.avgTceaDisplay = (totalTcea / totalSims).toFixed(1) + '%';
       } else {
@@ -272,7 +273,7 @@ export class DashboardComponent implements OnInit {
       }
 
       // Recent simulations (last 5 sorted by id desc)
-      const sorted = [...(simulations as any[])].sort((a, b) => (b.id || 0) - (a.id || 0)).slice(0, 5);
+      const sorted = [...simsArray].sort((a, b) => (b.id || 0) - (a.id || 0)).slice(0, 5);
       this.recentSimulations = sorted.map((s: any) => {
         const isSoles = s.currency === 'PEN';
         const sym = isSoles ? 'S/' : 'USD';
