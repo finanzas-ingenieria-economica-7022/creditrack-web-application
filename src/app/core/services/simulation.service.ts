@@ -24,6 +24,51 @@ export interface SimulationRequestPayload {
   vehicleInsuranceAnnualPercent: number;
 }
 
+export interface SimulationScheduleRow {
+  period: number;
+  date: string;
+  initialBalance: number;
+  payment: number;
+  balloonPayment: number;
+  interest: number;
+  amortization: number;
+  insurance: number;
+  creditLifeInsurance: number;
+  vehicleInsurance: number;
+  commission: number;
+  totalPayment: number;
+  finalFlow: number;
+  baseFlow: number;
+  finalBalance: number;
+  graceType: string;
+}
+
+export interface SimulationResponse {
+  id?: number;
+  code?: string;
+  currency: string;
+  vehiclePrice: number;
+  downPaymentAmount: number;
+  financedAmount: number;
+  balloonPercent: number;
+  /** Monto absoluto de la cuota balón calculado por el backend */
+  balloonAmount: number;
+  termMonths: number;
+  teaPercent: number;
+  temPercent: number;
+  cokTeaPercent: number;
+  cokTemPercent: number;
+  regularInstallment: number;
+  van: number;
+  tirPercent: number;
+  tceaPercent: number;
+  totalInterest: number;
+  totalInsurance: number;
+  totalFees: number;
+  totalPayment: number;
+  schedule: SimulationScheduleRow[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -39,8 +84,8 @@ export class SimulationService {
     });
   }
 
-  create(request: SimulationRequestPayload): Observable<any> {
-    return this.http.post<any>(this.API_URL, request, { headers: this.getHeaders() });
+  create(request: SimulationRequestPayload): Observable<SimulationResponse> {
+    return this.http.post<SimulationResponse>(this.API_URL, request, { headers: this.getHeaders() });
   }
 
   getAll(page = 0, size = 20): Observable<any> {

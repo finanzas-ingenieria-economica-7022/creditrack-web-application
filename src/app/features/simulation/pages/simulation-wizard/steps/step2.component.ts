@@ -112,7 +112,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
             </div>
           </div>
           <p class="text-xs text-gray-500 mt-8 leading-relaxed">
-            El porcentaje se calcula sobre el precio del vehiculo menos la cuota inicial. Este monto se pagara en la ultima cuota del cronograma.
+            El porcentaje se aplica sobre el <strong class="text-gray-300">Monto a Financiar</strong> (precio del vehículo menos la cuota inicial). Este monto adicional se pagará en la última cuota del cronograma.
           </p>
         </div>
 
@@ -155,11 +155,14 @@ export class SimulationStep2Component implements OnInit {
   }
 
   calculateBalloonAmount(): number {
-    const price = this.parentForm.get('vehiclePrice')?.value || 0;
-    const downPct = this.parentForm.get('downPaymentPercent')?.value || 0;
-    const balloonPct = this.parentForm.get('balloonPercent')?.value || 0;
-    const financed = price * (1 - downPct / 100);
-    return (financed * balloonPct) / 100;
+    const price: number = this.parentForm.get('vehiclePrice')?.value || 0;
+    const downPct: number = this.parentForm.get('downPaymentPercent')?.value || 0;
+    const balloonPct: number = this.parentForm.get('balloonPercent')?.value || 0;
+    // Regla de negocio: el balón se calcula sobre el MONTO A FINANCIAR,
+    // definido como el precio del vehículo menos la cuota inicial.
+    const downPaymentAmount: number = price * (downPct / 100);
+    const financedAmount: number = price - downPaymentAmount;
+    return (financedAmount * balloonPct) / 100;
   }
 
   isInvalid(): boolean {

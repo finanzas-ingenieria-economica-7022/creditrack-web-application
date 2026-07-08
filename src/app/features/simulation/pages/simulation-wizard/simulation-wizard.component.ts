@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CustomerService, Customer } from '../../../../core/services/customer.service';
 import { VehicleService, Vehicle } from '../../../../core/services/vehicle.service';
 import { FinancialEntityService, FinancialEntity } from '../../../../core/services/financial-entity.service';
-import { SimulationService, SimulationRequestPayload } from '../../../../core/services/simulation.service';
+import { SimulationService, SimulationRequestPayload, SimulationResponse } from '../../../../core/services/simulation.service';
 import { SimulationStep1Component } from './steps/step1.component';
 import { SimulationStep2Component } from './steps/step2.component';
 import { SimulationStep3Component } from './steps/step3.component';
@@ -68,7 +68,7 @@ export class SimulationWizardComponent implements OnInit {
   vehicles: Vehicle[] = [];
   financialEntities: FinancialEntity[] = [];
   defaultEntityId = 1;
-  simulationResult: any = null;
+  simulationResult: SimulationResponse | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -158,11 +158,15 @@ export class SimulationWizardComponent implements OnInit {
     const firstPayment = new Date(today.getFullYear(), today.getMonth() + 1, payDay);
     const firstPaymentDateStr = firstPayment.toISOString().split('T')[0];
 
+    // Use the real vehicle price from the catalog, not the stale form field
+    const selectedVehicle = this.vehicles.find(v => v.id === Number(formVal.vehicleId));
+    const vehiclePrice = selectedVehicle ? selectedVehicle.price : (formVal.vehiclePrice || 0);
+
     const request: SimulationRequestPayload = {
       clientId: Number(formVal.customerId),
       vehicleId: Number(formVal.vehicleId),
       financialEntityId: this.defaultEntityId,
-      vehiclePrice: formVal.vehiclePrice,
+      vehiclePrice: vehiclePrice,
       currency: formVal.currency || 'PEN',
       teaPercent: formVal.teaPercent,
       downPaymentPercent: formVal.downPaymentPercent,
@@ -172,7 +176,7 @@ export class SimulationWizardComponent implements OnInit {
       paymentDay: payDay,
       graceType: formVal.graceType || 'NONE',
       graceMonths: formVal.graceMonths || 0,
-      balloonPercent: formVal.balloonPercent || 0,
+      balloonPercent: Number(formVal.balloonPercent) || 0,
       creditLifeInsuranceEnabled: true,
       creditLifeInsuranceMonthlyPercent: formVal.creditLifeInsuranceMonthlyPercent,
       vehicleInsuranceEnabled: true,
@@ -180,7 +184,7 @@ export class SimulationWizardComponent implements OnInit {
     };
 
     this.simulationService.create(request).subscribe({
-      next: (res) => { this.simulationResult = res; this.currentStep = 4; this.loading = false; },
+      next: (res: SimulationResponse) => { this.simulationResult = res; this.currentStep = 4; this.loading = false; },
       error: () => { this.loading = false; alert('Error al calcular la simulacion. Verifica la conexion con el servidor.'); }
     });
   }

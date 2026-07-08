@@ -1,22 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-export interface PaymentRow {
-  period: number;
-  date: string;
-  initialBalance: number;
-  payment: number;
-  balloonPayment: number;
-  interest: number;
-  amortization: number;
-  insurance: number;
-  creditLifeInsurance: number;
-  vehicleInsurance: number;
-  commission: number;
-  totalPayment: number;
-  finalBalance: number;
-  graceType: string;
-}
+import { SimulationResponse, SimulationScheduleRow } from '../../../../../core/services/simulation.service';
 
 @Component({
   selector: 'app-simulation-schedule',
@@ -47,7 +31,7 @@ export interface PaymentRow {
         </div>
         <div class="bg-dark-card border border-dark-border rounded-xl p-5 space-y-1">
           <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Cuota Mensual</span>
-          <div class="text-lg font-bold text-white">{{ formatCurrencySymbol() }} {{ formatMoney(result?.monthlyPayment) }}</div>
+          <div class="text-lg font-bold text-white">{{ formatCurrencySymbol() }} {{ formatMoney(result?.regularInstallment) }}</div>
         </div>
         <div class="bg-dark-card border border-dark-border rounded-xl p-5 space-y-1 relative">
           <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Cuota Balon</span>
@@ -124,15 +108,15 @@ export interface PaymentRow {
   `
 })
 export class SimulationScheduleComponent {
-  @Input() result!: any;
+  @Input() result!: SimulationResponse | null;
   @Input() customerName = '';
   @Output() viewIndicators = new EventEmitter<void>();
   @Output() newSimulation = new EventEmitter<void>();
 
   getCustomerName(): string { return this.customerName || 'Cliente'; }
-  getSchedule(): PaymentRow[] { return this.result?.schedule || []; }
-  hasBalloon(): boolean { return this.result?.balloonAmount > 0; }
-  isLastRow(row: PaymentRow): boolean { return row.period === this.result?.termMonths; }
+  getSchedule(): SimulationScheduleRow[] { return this.result?.schedule || []; }
+  hasBalloon(): boolean { return (this.result?.balloonAmount || 0) > 0; }
+  isLastRow(row: SimulationScheduleRow): boolean { return this.result ? row.period === this.result.termMonths : false; }
 
   onViewIndicators() { this.viewIndicators.emit(); }
   onNewSimulation() { this.newSimulation.emit(); }

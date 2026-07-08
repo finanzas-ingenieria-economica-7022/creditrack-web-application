@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { SimulationResponse } from '../../../../../core/services/simulation.service';
 
 @Component({
   selector: 'app-simulation-indicators',
@@ -52,6 +53,24 @@ import { CommonModule } from '@angular/common';
         <div class="bg-dark-card border border-dark-border rounded-xl p-5">
           <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">COK TEM</span>
           <div class="text-2xl font-bold text-brand-text mt-1">{{ formatPct7(result?.cokTemPercent) }}%</div>
+        </div>
+      </div>
+
+      <!-- CUOTA BALÓN indicator (shown when balloonPercent > 0) -->
+      <div *ngIf="result && result.balloonPercent > 0"
+        class="border border-yellow-600/30 bg-yellow-950/10 rounded-xl p-5 flex items-center justify-between">
+        <div class="space-y-1">
+          <span class="text-[9px] font-bold text-yellow-600/80 uppercase tracking-wider block">Cuota Balón</span>
+          <div class="flex items-center space-x-2">
+            <span class="text-2xl font-bold text-accent-gold">{{ formatCurrencySymbol() }} {{ formatMoney(result?.balloonAmount) }}</span>
+            <span class="px-2 py-0.5 bg-yellow-950/40 border border-yellow-600/30 text-yellow-400 text-[9px] font-bold rounded">{{ result?.balloonPercent }}% del financiado</span>
+          </div>
+          <p class="text-[10px] text-gray-500">Pago único al final del plazo que reduce la cuota regular mensual.</p>
+        </div>
+        <div class="w-12 h-12 flex-shrink-0 bg-yellow-950/20 rounded-full flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-accent-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
         </div>
       </div>
 
@@ -129,7 +148,7 @@ import { CommonModule } from '@angular/common';
   `
 })
 export class SimulationIndicatorsComponent {
-  @Input() result!: any;
+  @Input() result!: SimulationResponse | null;
   @Input() customerName = '';
   @Input() parentForm!: any;
   @Output() back = new EventEmitter<void>();

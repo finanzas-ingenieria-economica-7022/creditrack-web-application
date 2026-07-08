@@ -38,12 +38,14 @@ export class AuthService {
   }
 
   saveToken(token: string, username: string): void {
+    if (!token || token === 'undefined') return;
     localStorage.setItem('token', token);
     localStorage.setItem('username', username);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    const t = localStorage.getItem('token');
+    return t === 'undefined' ? null : t;
   }
 
   getUsername(): string | null {
@@ -51,7 +53,8 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    return !!token && token !== 'undefined';
   }
 
   logout(): void {

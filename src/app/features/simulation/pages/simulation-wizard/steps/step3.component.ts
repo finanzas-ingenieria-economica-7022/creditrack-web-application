@@ -94,9 +94,8 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
           <div class="pt-2">
             <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Cargos Mensuales</span>
             <span class="text-gray-300 text-xs">
-              Desgravamen ({{ parentForm.get('desgravamenRate')?.value }}%), 
-              Seg. Vehicular ({{ formatCurrencySymbol() }} {{ formatNumber(parentForm.get('riskInsuranceRate')?.value) }}), 
-              Portes ({{ formatCurrencySymbol() }} {{ formatNumber(parentForm.get('portesFee')?.value) }})
+              Desgravamen ({{ parentForm.get('creditLifeInsuranceMonthlyPercent')?.value }}% mensual), 
+              Seg. Vehicular ({{ parentForm.get('vehicleInsuranceAnnualPercent')?.value }}% anual)
             </span>
           </div>
 
