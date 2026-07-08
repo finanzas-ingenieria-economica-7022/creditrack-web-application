@@ -1,15 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
+import { catchError, of } from 'rxjs';
 import { AnalyticsService, DashboardMetrics } from '../../services/analytics.service';
-
-interface RecentSimulation {
-  cliente: string;
-  vehiculo: string;
-  monto: string;
-  tir: string;
-  estado: 'COMPLETADA' | 'EN PROCESO' | 'RECHAZADA';
-}
+import { SimulationService } from '../../../../core/services/simulation.service';
+import { CustomerService } from '../../../../core/services/customer.service';
+import { VehicleService } from '../../../../core/services/vehicle.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,11 +16,14 @@ interface RecentSimulation {
     <div class="space-y-6">
       <!-- KPI Metric Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- SIMULACIONES HOY -->
+        <!-- SIMULACIONES TOTALES -->
         <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex justify-between items-start">
           <div class="space-y-2">
-            <span class="text-xs font-semibold text-gray-500 tracking-wider uppercase">Simulaciones Hoy</span>
-            <div class="text-3xl font-bold text-white">{{ todaySimulations }}</div>
+            <span class="text-xs font-semibold text-gray-500 tracking-wider uppercase">Simulaciones</span>
+            <div class="text-3xl font-bold text-white">
+              <span *ngIf="loading" class="inline-block w-10 h-8 bg-gray-800 rounded animate-pulse"></span>
+              <span *ngIf="!loading">{{ totalSimulationsDisplay }}</span>
+            </div>
           </div>
           <div class="p-3 bg-gray-800 rounded-lg text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -36,7 +36,10 @@ interface RecentSimulation {
         <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex justify-between items-start">
           <div class="space-y-2">
             <span class="text-xs font-semibold text-gray-500 tracking-wider uppercase">Clientes Registrados</span>
-            <div class="text-3xl font-bold text-white">{{ registeredClients }}</div>
+            <div class="text-3xl font-bold text-white">
+              <span *ngIf="loading" class="inline-block w-10 h-8 bg-gray-800 rounded animate-pulse"></span>
+              <span *ngIf="!loading">{{ registeredClientsDisplay }}</span>
+            </div>
           </div>
           <div class="p-3 bg-gray-800 rounded-lg text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -45,11 +48,14 @@ interface RecentSimulation {
           </div>
         </div>
 
-        <!-- MONTO SIMULADO (MES) -->
+        <!-- MONTO PROMEDIO -->
         <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex justify-between items-start">
           <div class="space-y-2">
-            <span class="text-xs font-semibold text-gray-500 tracking-wider uppercase">Monto Simulado (Mes)</span>
-            <div class="text-3xl font-bold text-white">{{ monthlySimulatedAmount }}</div>
+            <span class="text-xs font-semibold text-gray-500 tracking-wider uppercase">Monto Promedio</span>
+            <div class="text-3xl font-bold text-white">
+              <span *ngIf="loading" class="inline-block w-24 h-8 bg-gray-800 rounded animate-pulse"></span>
+              <span *ngIf="!loading">{{ avgLoanAmountDisplay }}</span>
+            </div>
           </div>
           <div class="p-3 bg-gray-800 rounded-lg text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -58,12 +64,15 @@ interface RecentSimulation {
           </div>
         </div>
 
-        <!-- TIR PROMEDIO -->
+        <!-- TCEA PROMEDIO -->
         <div class="bg-dark-card border border-dark-border rounded-xl p-6 flex justify-between items-start">
           <div class="space-y-2">
-            <span class="text-xs font-semibold text-gray-500 tracking-wider uppercase">Tir Promedio</span>
-            <div class="text-3xl font-bold text-accent-gold">{{ averageTir }}</div>
-            <div class="text-[10px] text-gray-500 font-medium">promedio mensual</div>
+            <span class="text-xs font-semibold text-gray-500 tracking-wider uppercase">TCEA Promedio</span>
+            <div class="text-3xl font-bold text-accent-gold">
+              <span *ngIf="loading" class="inline-block w-16 h-8 bg-gray-800 rounded animate-pulse"></span>
+              <span *ngIf="!loading">{{ avgTceaDisplay }}</span>
+            </div>
+            <div class="text-[10px] text-gray-500 font-medium">costo efectivo anual</div>
           </div>
           <div class="p-3 bg-yellow-950/20 border border-yellow-600/20 rounded-lg text-accent-gold">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -84,12 +93,26 @@ interface RecentSimulation {
             </a>
           </div>
 
-          <div class="overflow-x-auto">
+          <!-- Loading skeleton -->
+          <div *ngIf="loading" class="space-y-3">
+            <div *ngFor="let i of [1,2,3,4]" class="h-10 bg-gray-800/60 rounded animate-pulse"></div>
+          </div>
+
+          <!-- Empty state -->
+          <div *ngIf="!loading && recentSimulations.length === 0" class="flex flex-col items-center justify-center py-10 text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <p class="text-gray-500 text-sm font-medium">Sin simulaciones aun</p>
+            <p class="text-gray-600 text-xs mt-1">Crea una simulacion para verla aqui</p>
+          </div>
+
+          <div *ngIf="!loading && recentSimulations.length > 0" class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="border-b border-dark-border text-gray-500 text-[10px] uppercase font-bold tracking-wider">
                   <th class="pb-3">Cliente</th>
-                  <th class="pb-3">Vehículo</th>
+                  <th class="pb-3">Vehiculo</th>
                   <th class="pb-3">Monto</th>
                   <th class="pb-3 text-center">TIR</th>
                   <th class="pb-3 text-right">Estado</th>
@@ -120,12 +143,14 @@ interface RecentSimulation {
         </div>
 
         <!-- Quick Access (Right) -->
-        <div class="space-y-6">
-          <h3 class="text-white font-bold text-base mb-1">Acceso Rápido</h3>
+        <div class="space-y-4">
+          <h3 class="text-white font-bold text-base mb-1">Acceso Rapido</h3>
 
           <!-- Card 1: Nuevo cliente -->
           <a
+            id="quick-access-new-client"
             routerLink="/clientes"
+            [queryParams]="{openModal: 'true'}"
             class="flex items-center justify-between p-5 bg-dark-card border border-dark-border hover:border-gray-700 rounded-xl cursor-pointer transition duration-150 group"
           >
             <div>
@@ -139,14 +164,16 @@ interface RecentSimulation {
             </div>
           </a>
 
-          <!-- Card 2: Registrar vehículo -->
+          <!-- Card 2: Registrar vehiculo -->
           <a
+            id="quick-access-new-vehicle"
             routerLink="/vehiculos"
+            [queryParams]="{openModal: 'true'}"
             class="flex items-center justify-between p-5 bg-dark-card border border-dark-border hover:border-gray-700 rounded-xl cursor-pointer transition duration-150 group"
           >
             <div>
-              <h4 class="text-white font-bold text-sm">Registrar vehículo</h4>
-              <p class="text-xs text-gray-500 mt-1">Añadir garantía a cliente</p>
+              <h4 class="text-white font-bold text-sm">Registrar vehiculo</h4>
+              <p class="text-xs text-gray-500 mt-1">Anadir garantia a cliente</p>
             </div>
             <div class="text-gray-400 group-hover:text-white transition duration-150">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -156,18 +183,19 @@ interface RecentSimulation {
             </div>
           </a>
 
-          <!-- Card 3: Nueva simulación (Highlighted in vibrant blue) -->
+          <!-- Card 3: Nueva simulacion (Highlighted in vibrant blue) -->
           <a
+            id="quick-access-new-simulation"
             routerLink="/simulaciones"
             class="flex items-center justify-between p-5 bg-brand-primary hover:bg-brand-hover border border-brand-primary rounded-xl cursor-pointer transition duration-150 group"
           >
             <div>
-              <h4 class="text-white font-bold text-sm">Nueva simulación</h4>
+              <h4 class="text-white font-bold text-sm">Nueva simulacion</h4>
               <p class="text-xs text-blue-200 mt-1">Calcular escenario crediticio</p>
             </div>
             <div class="text-white/80 group-hover:text-white transition duration-150">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
             </div>
           </a>
@@ -177,41 +205,89 @@ interface RecentSimulation {
   `
 })
 export class DashboardComponent implements OnInit {
-  todaySimulations: string = '08';
-  registeredClients: string = '124';
-  monthlySimulatedAmount: string = 'S/ 4,280,500';
-  averageTir: string = '16.2%';
+  loading = true;
 
-  recentSimulations: RecentSimulation[] = [
-    { cliente: 'Mateo Rojas', vehiculo: 'Toyota Yaris 2024', monto: 'S/ 48,000', tir: '16.08%', estado: 'COMPLETADA' },
-    { cliente: 'Sofía Castro', vehiculo: 'Kia Sportage', monto: 'USD 22,500', tir: '12.68%', estado: 'COMPLETADA' },
-    { cliente: 'Luis Vargas', vehiculo: 'Hyundai Tucson', monto: 'S/ 85,000', tir: '15.20%', estado: 'EN PROCESO' },
-    { cliente: 'Ana Mendoza', vehiculo: 'Nissan Versa', monto: 'S/ 52,000', tir: '13.50%', estado: 'RECHAZADA' }
-  ];
+  totalSimulationsDisplay = '00';
+  registeredClientsDisplay = '00';
+  avgLoanAmountDisplay = '—';
+  avgTceaDisplay = '—';
 
-  constructor(private analyticsService: AnalyticsService) {}
+  recentSimulations: {
+    cliente: string;
+    vehiculo: string;
+    monto: string;
+    tir: string;
+    estado: 'COMPLETADA' | 'EN PROCESO' | 'RECHAZADA';
+  }[] = [];
+
+  private customerMap: Record<number, string> = {};
+  private vehicleMap: Record<number, string> = {};
+
+  constructor(
+    private analyticsService: AnalyticsService,
+    private simulationService: SimulationService,
+    private customerService: CustomerService,
+    private vehicleService: VehicleService
+  ) {}
 
   ngOnInit() {
     this.fetchDashboardData();
   }
 
   fetchDashboardData() {
-    this.analyticsService.getDashboardMetrics().subscribe({
-      next: (metrics: DashboardMetrics) => {
-        // Sync values from backend if they are available
-        if (metrics.totalSimulations !== undefined && metrics.totalSimulations > 0) {
-          // Add pad for today simulations (mock calculation based on actual stats)
-          this.todaySimulations = String(metrics.totalSimulations).padStart(2, '0');
-          // Format average loan amount total
-          const totalAmount = metrics.averageLoanAmount * metrics.totalSimulations;
-          this.monthlySimulatedAmount = 'S/ ' + new Intl.NumberFormat('es-PE').format(Math.round(totalAmount));
-          // Annualized TCEA / monthly TIR formatting
-          this.averageTir = (metrics.averageTcea * 100).toFixed(1) + '%';
-        }
-      },
-      error: () => {
-        // Fallback default mockup states are already configured
+    this.loading = true;
+
+    forkJoin({
+      metrics: this.analyticsService.getDashboardMetrics().pipe(catchError(() => of(null))),
+      simulations: this.simulationService.getAll().pipe(catchError(() => of([]))),
+      customers: this.customerService.getAll().pipe(catchError(() => of([]))),
+      vehicles: this.vehicleService.getAll().pipe(catchError(() => of([])))
+    }).subscribe(({ metrics, simulations, customers, vehicles }) => {
+      // Build lookup maps
+      (customers as any[]).forEach((c: any) => {
+        this.customerMap[c.id] = `${c.firstName} ${c.lastName}`;
+      });
+      (vehicles as any[]).forEach((v: any) => {
+        this.vehicleMap[v.id] = `${v.brand} ${v.model}`;
+      });
+
+      // KPI Cards
+      const totalSims = (simulations as any[]).length;
+      this.totalSimulationsDisplay = String(totalSims).padStart(2, '0');
+      this.registeredClientsDisplay = String((customers as any[]).length).padStart(2, '0');
+
+      if (metrics && (metrics as DashboardMetrics).averageLoanAmount > 0) {
+        const m = metrics as DashboardMetrics;
+        this.avgLoanAmountDisplay = 'S/ ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(m.averageLoanAmount);
+        // TCEA from metrics DB is now stored as percentage (e.g., 14.0)
+        this.avgTceaDisplay = Number(m.averageTcea).toFixed(1) + '%';
+      } else if (totalSims > 0) {
+        const totalLoan = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.financedAmount || 0), 0);
+        const totalTcea = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.tceaPercent || 0), 0);
+        this.avgLoanAmountDisplay = 'S/ ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(totalLoan / totalSims);
+        this.avgTceaDisplay = (totalTcea / totalSims).toFixed(1) + '%';
+      } else {
+        this.avgLoanAmountDisplay = 'S/ 0';
+        this.avgTceaDisplay = '0.0%';
       }
+
+      // Recent simulations (last 5 sorted by id desc)
+      const sorted = [...(simulations as any[])].sort((a, b) => (b.id || 0) - (a.id || 0)).slice(0, 5);
+      this.recentSimulations = sorted.map((s: any) => {
+        const isSoles = s.currency === 'PEN';
+        const sym = isSoles ? 'S/' : 'USD';
+        const tirPct = s.tirPercent != null ? Number(s.tirPercent).toFixed(2) + '%' : '—';
+        const monto = sym + ' ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(s.financedAmount || s.vehiclePrice || 0);
+        return {
+          cliente: this.customerMap[s.clientId] || `Cliente #${s.clientId}`,
+          vehiculo: this.vehicleMap[s.vehicleId] || `Vehiculo #${s.vehicleId}`,
+          monto,
+          tir: tirPct,
+          estado: 'COMPLETADA' as const
+        };
+      });
+
+      this.loading = false;
     });
   }
 }

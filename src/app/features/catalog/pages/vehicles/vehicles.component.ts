@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { VehicleService, Vehicle } from '../../../../core/services/vehicle.service';
 
 @Component({
@@ -253,7 +254,8 @@ export class VehiclesComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private vehicleService: VehicleService
+    private vehicleService: VehicleService,
+    private route: ActivatedRoute
   ) {
     this.vehicleForm = this.fb.group({
       brand: ['', Validators.required],
@@ -266,6 +268,11 @@ export class VehiclesComponent implements OnInit {
 
   ngOnInit() {
     this.fetchVehicles();
+    this.route.queryParams.subscribe(params => {
+      if (params['openModal'] === 'true') {
+        this.openAddModal();
+      }
+    });
   }
 
   get f() {
