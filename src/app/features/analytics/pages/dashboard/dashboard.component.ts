@@ -259,12 +259,13 @@ export class DashboardComponent implements OnInit {
       if (metrics && (metrics as DashboardMetrics).averageLoanAmount > 0) {
         const m = metrics as DashboardMetrics;
         this.avgLoanAmountDisplay = 'S/ ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(m.averageLoanAmount);
-        this.avgTceaDisplay = (m.averageTcea * 100).toFixed(1) + '%';
+        // TCEA from metrics DB is now stored as percentage (e.g., 14.0)
+        this.avgTceaDisplay = Number(m.averageTcea).toFixed(1) + '%';
       } else if (totalSims > 0) {
-        const totalLoan = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.loanAmount || 0), 0);
-        const totalTcea = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.tcea || 0), 0);
+        const totalLoan = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.financedAmount || 0), 0);
+        const totalTcea = (simulations as any[]).reduce((sum: number, s: any) => sum + (s.tceaPercent || 0), 0);
         this.avgLoanAmountDisplay = 'S/ ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(totalLoan / totalSims);
-        this.avgTceaDisplay = ((totalTcea / totalSims) * 100).toFixed(1) + '%';
+        this.avgTceaDisplay = (totalTcea / totalSims).toFixed(1) + '%';
       } else {
         this.avgLoanAmountDisplay = 'S/ 0';
         this.avgTceaDisplay = '0.0%';
@@ -273,12 +274,12 @@ export class DashboardComponent implements OnInit {
       // Recent simulations (last 5 sorted by id desc)
       const sorted = [...(simulations as any[])].sort((a, b) => (b.id || 0) - (a.id || 0)).slice(0, 5);
       this.recentSimulations = sorted.map((s: any) => {
-        const isSoles = (s.vehiclePrice || 0) > 35000;
+        const isSoles = s.currency === 'PEN';
         const sym = isSoles ? 'S/' : 'USD';
-        const tirPct = s.tir != null ? (s.tir * 100).toFixed(2) + '%' : '—';
-        const monto = sym + ' ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(s.loanAmount || s.vehiclePrice || 0);
+        const tirPct = s.tirPercent != null ? Number(s.tirPercent).toFixed(2) + '%' : '—';
+        const monto = sym + ' ' + new Intl.NumberFormat('es-PE', { maximumFractionDigits: 0 }).format(s.financedAmount || s.vehiclePrice || 0);
         return {
-          cliente: this.customerMap[s.customerId] || `Cliente #${s.customerId}`,
+          cliente: this.customerMap[s.clientId] || `Cliente #${s.clientId}`,
           vehiculo: this.vehicleMap[s.vehicleId] || `Vehiculo #${s.vehicleId}`,
           monto,
           tir: tirPct,

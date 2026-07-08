@@ -101,7 +101,7 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
               <span class="absolute left-3.5 text-gray-500 font-medium text-sm">%</span>
               <input
                 type="number"
-                formControlName="initialPaymentPercentage"
+                formControlName="downPaymentPercent"
                 (input)="calculateInitialPayment()"
                 placeholder="20"
                 class="w-full pl-9 pr-4 py-2.5 bg-dark-input border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-primary text-sm font-semibold transition duration-150"
@@ -276,7 +276,7 @@ export class SimulationStep1Component implements OnInit {
   }
 
   calculateInitialPayment() {
-    const pct = this.parentForm.get('initialPaymentPercentage')?.value || 0;
+    const pct = this.parentForm.get('downPaymentPercent')?.value || 0;
     const notary = this.parentForm.get('notaryCost')?.value || 0;
     const registration = this.parentForm.get('registrationCost')?.value || 0;
     const appraisal = this.parentForm.get('appraisalCost')?.value || 0;
@@ -289,7 +289,7 @@ export class SimulationStep1Component implements OnInit {
     return (
       !this.parentForm.get('customerId')?.value ||
       !this.parentForm.get('vehicleId')?.value ||
-      !this.parentForm.get('initialPaymentPercentage')?.value
+      !this.parentForm.get('downPaymentPercent')?.value
     );
   }
 

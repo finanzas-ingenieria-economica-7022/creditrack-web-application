@@ -42,7 +42,7 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
             <div>
               <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Cuota Inicial</span>
               <span class="text-white font-semibold text-sm">
-                {{ formatCurrencySymbol() }} {{ formatNumber(getInitialPaymentAmount()) }} ({{ parentForm.get('initialPaymentPercentage')?.value }}%)
+                {{ formatCurrencySymbol() }} {{ formatNumber(getInitialPaymentAmount()) }} ({{ parentForm.get('downPaymentPercent')?.value }}%)
               </span>
             </div>
 
@@ -66,7 +66,7 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
               <div>
                 <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Tipo de Tasa</span>
                 <span class="text-white font-bold text-sm">
-                  {{ parentForm.get('interestRateType')?.value }} — {{ parentForm.get('interestRate')?.value }}%
+                  {{ parentForm.get('teaPercent')?.value }} — {{ parentForm.get('teaPercent')?.value }}%
                 </span>
               </div>
               <div>
@@ -84,7 +84,7 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
               <div>
                 <span class="text-[10px] text-gray-500 font-medium">Cuota Balón</span>
                 <div class="text-base font-bold text-accent-gold">
-                  {{ parentForm.get('finalPaymentPercentage')?.value }}% = {{ formatCurrencySymbol() }} {{ formatNumber(calculateBalloonAmount()) }}
+                  {{ parentForm.get('balloonPercent')?.value }}% = {{ formatCurrencySymbol() }} {{ formatNumber(calculateBalloonAmount()) }}
                 </div>
               </div>
             </div>
@@ -94,9 +94,8 @@ import { Vehicle } from '../../../../../core/services/vehicle.service';
           <div class="pt-2">
             <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Cargos Mensuales</span>
             <span class="text-gray-300 text-xs">
-              Desgravamen ({{ parentForm.get('desgravamenRate')?.value }}%), 
-              Seg. Vehicular ({{ formatCurrencySymbol() }} {{ formatNumber(parentForm.get('riskInsuranceRate')?.value) }}), 
-              Portes ({{ formatCurrencySymbol() }} {{ formatNumber(parentForm.get('portesFee')?.value) }})
+              Desgravamen ({{ parentForm.get('creditLifeInsuranceMonthlyPercent')?.value }}% mensual), 
+              Seg. Vehicular ({{ parentForm.get('vehicleInsuranceAnnualPercent')?.value }}% anual)
             </span>
           </div>
 
@@ -173,7 +172,7 @@ export class SimulationStep3Component {
 
   getInitialPaymentAmount(): number {
     const price = this.getVehiclePrice();
-    const pct = this.parentForm.get('initialPaymentPercentage')?.value || 0;
+    const pct = this.parentForm.get('downPaymentPercent')?.value || 0;
     return (price * pct) / 100;
   }
 
@@ -182,8 +181,8 @@ export class SimulationStep3Component {
   }
 
   calculateTemFromTea(): string {
-    const rate = this.parentForm.get('interestRate')?.value || 0;
-    const type = this.parentForm.get('interestRateType')?.value;
+    const rate = this.parentForm.get('teaPercent')?.value || 0;
+    const type = this.parentForm.get('teaPercent')?.value;
     if (type === 'TNA') {
       // Nominal rate daily capitalization TEM approximation
       const tna = rate / 100;
@@ -197,7 +196,7 @@ export class SimulationStep3Component {
 
   calculateBalloonAmount(): number {
     const financedBase = this.getAmountToFinance();
-    const balloonPct = this.parentForm.get('finalPaymentPercentage')?.value || 0;
+    const balloonPct = this.parentForm.get('balloonPercent')?.value || 0;
     return (financedBase * balloonPct) / 100;
   }
 

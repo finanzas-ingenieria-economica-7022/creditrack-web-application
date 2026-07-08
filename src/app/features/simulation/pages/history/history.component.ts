@@ -8,29 +8,36 @@ import { VehicleService, Vehicle } from '../../../../core/services/vehicle.servi
 
 interface SimulationItem {
   id: number;
-  name: string;
-  vehiclePrice: number;
-  initialPaymentPercentage: number;
-  finalPaymentPercentage: number;
-  termMonths: number;
-  interestRate: number;
-  interestRateType: string;
-  capitalizationType: string;
-  paymentFrequency: number;
-  daysPerYear: number;
-  loanAmount: number;
-  tea: number;
-  tem: number;
-  tir: number;
-  tcea: number;
-  van: number;
-  customerId: number;
+  code: string;
+  clientId: number;
   vehicleId: number;
+  financialEntityId?: number;
+  currency: string;
+  vehiclePrice: number;
+  downPaymentPercent: number;
+  financedAmount: number;
+  termMonths: number;
+  teaPercent: number;
+  temPercent: number;
+  cokTeaPercent?: number;
+  cokTemPercent?: number;
+  tirPercent: number;
+  tceaPercent: number;
+  van: number;
+  monthlyPayment: number;
+  balloonPercent: number;
+  balloonAmount?: number;
+  totalInterest: number;
+  totalInsurance: number;
+  totalFees: number;
+  totalPayment: number;
+  graceType: string;
+  graceMonths: number;
+  firstPaymentDate: string;
   createdDate: string;
-  gracePeriods: string[];
-  desgravamenRate: number;
-  riskInsuranceRate: number;
-  portesFee: number;
+  status: string;
+  creditLifeInsuranceMonthlyPercent: number;
+  vehicleInsuranceAnnualPercent: number;
 }
 
 @Component({
@@ -145,18 +152,18 @@ interface SimulationItem {
               <!-- Rows -->
               <tr *ngFor="let sim of pagedSimulations; let idx = index" class="hover:bg-gray-800/10 transition duration-100">
                 <td class="px-6 py-4 font-mono text-gray-500">#SIM-{{ formatId(sim.id) }}</td>
-                <td class="px-6 py-4 font-semibold text-white">{{ getCustomerName(sim.customerId) }}</td>
+                <td class="px-6 py-4 font-semibold text-white">{{ getCustomerName(sim.clientId) }}</td>
                 <td class="px-6 py-4">{{ getVehicleName(sim.vehicleId) }}</td>
-                <td class="px-6 py-4 font-mono">{{ sim.vehiclePrice <= 35000 ? 'USD' : 'PEN' }}</td>
-                <td class="px-6 py-4 font-bold text-white">{{ formatCurrencySymbol(sim.vehiclePrice) }} {{ formatNumber(sim.loanAmount) }}</td>
+                <td class="px-6 py-4 font-mono">{{ sim.currency }}</td>
+                <td class="px-6 py-4 font-bold text-white">{{ formatCurrencySymbol(sim.vehiclePrice) }} {{ formatNumber(sim.financedAmount) }}</td>
                 <td class="px-6 py-4">
                   <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-accent-gold/15 text-accent-gold border border-accent-gold/20">
-                    {{ formatPercentage(sim.tir) }}%
+                    {{ formatPercentageValue(sim.tirPercent) }}%
                   </span>
                 </td>
                 <td class="px-6 py-4">
                   <span class="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-yellow-950/20 text-yellow-600 border border-yellow-700/25">
-                    {{ formatPercentage(sim.finalPaymentPercentage) }}%
+                    {{ formatPercentageValue(sim.balloonPercent) }}%
                   </span>
                 </td>
                 <td class="px-6 py-4">{{ getFormattedDate(sim.createdDate, idx) }}</td>
@@ -262,7 +269,7 @@ interface SimulationItem {
                 </svg>
               </button>
             </div>
-            <h2 class="text-white font-bold text-xl leading-none">{{ getCustomerName(activeSimulation.customerId) }}</h2>
+            <h2 class="text-white font-bold text-xl leading-none">{{ getCustomerName(activeSimulation.clientId) }}</h2>
           </div>
 
           <!-- Parameter grid -->
@@ -270,7 +277,7 @@ interface SimulationItem {
             <div>
               <span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Monto Solicitado</span>
               <span class="text-white font-semibold">
-                {{ formatCurrencySymbol(activeSimulation.vehiclePrice) }} {{ formatNumber(activeSimulation.loanAmount) }}
+                {{ formatCurrencySymbol(activeSimulation.vehiclePrice) }} {{ formatNumber(activeSimulation.financedAmount) }}
               </span>
             </div>
             <div>
@@ -279,7 +286,7 @@ interface SimulationItem {
             </div>
             <div>
               <span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Tasa Base Anual</span>
-              <span class="text-white font-semibold">{{ formatPercentage(activeSimulation.interestRate) }}%</span>
+              <span class="text-white font-semibold">{{ formatPercentageValue(activeSimulation.teaPercent) }}%</span>
             </div>
             <div>
               <span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Tipo de Vehículo</span>
@@ -289,7 +296,7 @@ interface SimulationItem {
               <span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Enganche</span>
               <span class="text-white font-semibold">
                 {{ formatCurrencySymbol(activeSimulation.vehiclePrice) }} {{ formatNumber(calculateInitialPaymentValue()) }}
-                ({{ formatPercentage(activeSimulation.initialPaymentPercentage) }}%)
+                ({{ formatPercentageValue(activeSimulation.downPaymentPercent) }}%)
               </span>
             </div>
             <div>
@@ -321,7 +328,7 @@ interface SimulationItem {
               </div>
               <div>
                 <span class="text-[9px] text-gray-500 block mb-0.5">TIR</span>
-                <span class="text-accent-gold font-bold text-sm">{{ formatPercentage(activeSimulation.tir) }}%</span>
+                <span class="text-accent-gold font-bold text-sm">{{ formatPercentageValue(activeSimulation.tirPercent) }}%</span>
               </div>
             </div>
           </div>
@@ -459,7 +466,8 @@ export class HistoryComponent implements OnInit {
 
     this.simulationService.getAll().subscribe({
       next: (data) => {
-        this.simulations = data;
+        // Spring Page response wraps items in .content
+        this.simulations = data?.content || data || [];
         this.onFilter();
         this.loading = false;
       },
@@ -491,40 +499,40 @@ export class HistoryComponent implements OnInit {
   loadMockHistory() {
     this.simulations = [
       {
-        id: 1089, name: 'Simulación Mateo Rojas', vehiclePrice: 60000,
-        initialPaymentPercentage: 0.20, finalPaymentPercentage: 0.40, termMonths: 36,
-        interestRate: 0.14, interestRateType: 'TEA', capitalizationType: 'Diaria',
-        paymentFrequency: 30, daysPerYear: 360, loanAmount: 48000, tea: 0.1608, tem: 0.010991,
-        tir: 0.1608, tcea: 0.1608, van: 1250.00, customerId: 1, vehicleId: 1,
-        createdDate: '2023-10-24T10:00:00', gracePeriods: [],
-        desgravamenRate: 0.050, riskInsuranceRate: 0.016, portesFee: 10.00
+        id: 1089, code: 'SIM-001089', vehiclePrice: 60000,
+        downPaymentPercent: 20.0, balloonPercent: 40.0, termMonths: 36,
+        teaPercent: 14.0, temPercent: 1.0991,
+        financedAmount: 48000, tirPercent: 16.08, tceaPercent: 16.08, van: 1250.00, clientId: 1, vehicleId: 1,
+        createdDate: '2023-10-24T10:00:00', currency: 'PEN', status: 'Guardado', graceType: 'NONE', graceMonths: 0,
+        firstPaymentDate: '2023-11-24', creditLifeInsuranceMonthlyPercent: 0.05, vehicleInsuranceAnnualPercent: 1.2,
+        monthlyPayment: 1800.0, totalInterest: 10000, totalInsurance: 2000, totalFees: 0, totalPayment: 60000
       },
       {
-        id: 1088, name: 'Simulación Sofía Castro', vehiclePrice: 120000,
-        initialPaymentPercentage: 0.25, finalPaymentPercentage: 0.30, termMonths: 24,
-        interestRate: 0.13, interestRateType: 'TEA', capitalizationType: 'Diaria',
-        paymentFrequency: 30, daysPerYear: 360, loanAmount: 90000, tea: 0.1520, tem: 0.01021,
-        tir: 0.1520, tcea: 0.1520, van: -100.00, customerId: 2, vehicleId: 2,
-        createdDate: '2023-10-23T11:30:00', gracePeriods: [],
-        desgravamenRate: 0.050, riskInsuranceRate: 0.016, portesFee: 10.00
+        id: 1088, code: 'SIM-001088', vehiclePrice: 120000,
+        downPaymentPercent: 25.0, balloonPercent: 30.0, termMonths: 24,
+        teaPercent: 13.0, temPercent: 1.021,
+        financedAmount: 90000, tirPercent: 15.20, tceaPercent: 15.20, van: -100.00, clientId: 2, vehicleId: 2,
+        createdDate: '2023-10-23T11:30:00', currency: 'USD', status: 'Guardado', graceType: 'NONE', graceMonths: 0,
+        firstPaymentDate: '2023-11-23', creditLifeInsuranceMonthlyPercent: 0.05, vehicleInsuranceAnnualPercent: 1.2,
+        monthlyPayment: 3800.0, totalInterest: 15000, totalInsurance: 3000, totalFees: 0, totalPayment: 108000
       },
       {
-        id: 1087, name: 'Simulación Carlos Vera', vehiclePrice: 65000,
-        initialPaymentPercentage: 0.15, finalPaymentPercentage: 0.15, termMonths: 36,
-        interestRate: 0.12, interestRateType: 'TEA', capitalizationType: 'Diaria',
-        paymentFrequency: 30, daysPerYear: 360, loanAmount: 55250, tea: 0.1380, tem: 0.0094,
-        tir: 0.1380, tcea: 0.1380, van: 2500.00, customerId: 3, vehicleId: 3,
-        createdDate: '2023-10-21T09:15:00', gracePeriods: [],
-        desgravamenRate: 0.050, riskInsuranceRate: 0.016, portesFee: 10.00
+        id: 1087, code: 'SIM-001087', vehiclePrice: 65000,
+        downPaymentPercent: 15.0, balloonPercent: 15.0, termMonths: 36,
+        teaPercent: 12.0, temPercent: 0.94,
+        financedAmount: 55250, tirPercent: 13.80, tceaPercent: 13.80, van: 2500.00, clientId: 3, vehicleId: 3,
+        createdDate: '2023-10-21T09:15:00', currency: 'PEN', status: 'Guardado', graceType: 'NONE', graceMonths: 0,
+        firstPaymentDate: '2023-11-21', creditLifeInsuranceMonthlyPercent: 0.05, vehicleInsuranceAnnualPercent: 1.2,
+        monthlyPayment: 2100.0, totalInterest: 11000, totalInsurance: 2200, totalFees: 0, totalPayment: 68000
       },
       {
-        id: 1086, name: 'Simulación Elena Rivas', vehiclePrice: 85000,
-        initialPaymentPercentage: 0.20, finalPaymentPercentage: 0.25, termMonths: 48,
-        interestRate: 0.14, interestRateType: 'TEA', capitalizationType: 'Diaria',
-        paymentFrequency: 30, daysPerYear: 360, loanAmount: 68000, tea: 0.1610, tem: 0.0109,
-        tir: 0.1610, tcea: 0.1610, van: -850.00, customerId: 4, vehicleId: 4,
-        createdDate: '2023-10-20T16:45:00', gracePeriods: [],
-        desgravamenRate: 0.050, riskInsuranceRate: 0.016, portesFee: 10.00
+        id: 1086, code: 'SIM-001086', vehiclePrice: 85000,
+        downPaymentPercent: 20.0, balloonPercent: 25.0, termMonths: 48,
+        teaPercent: 14.0, temPercent: 1.09,
+        financedAmount: 68000, tirPercent: 16.10, tceaPercent: 16.10, van: -850.00, clientId: 4, vehicleId: 4,
+        createdDate: '2023-10-20T16:45:00', currency: 'PEN', status: 'Guardado', graceType: 'NONE', graceMonths: 0,
+        firstPaymentDate: '2023-11-20', creditLifeInsuranceMonthlyPercent: 0.05, vehicleInsuranceAnnualPercent: 1.2,
+        monthlyPayment: 2000.0, totalInterest: 13000, totalInsurance: 2800, totalFees: 0, totalPayment: 83000
       }
     ];
     this.onFilter();
@@ -584,7 +592,7 @@ export class HistoryComponent implements OnInit {
       const q = this.searchQuery.toLowerCase();
       list = list.filter((sim) => {
         const idStr = `SIM-${this.formatId(sim.id)}`.toLowerCase();
-        const clientName = this.getCustomerName(sim.customerId).toLowerCase();
+        const clientName = this.getCustomerName(sim.clientId).toLowerCase();
         return idStr.includes(q) || clientName.includes(q);
       });
     }
@@ -627,7 +635,7 @@ export class HistoryComponent implements OnInit {
   }
 
   formatEvaluatedAmount(): string {
-    const sum = this.filteredSimulations.reduce((acc, curr) => acc + curr.loanAmount, 0);
+    const sum = this.filteredSimulations.reduce((acc, curr) => acc + curr.financedAmount, 0);
     if (sum >= 1000000) {
       return (sum / 1000000).toFixed(2) + 'M';
     }
@@ -636,11 +644,10 @@ export class HistoryComponent implements OnInit {
 
   formatAverageTir(): string {
     if (this.filteredSimulations.length === 0) return '0.00';
-    const sum = this.filteredSimulations.reduce((acc, curr) => acc + curr.tir, 0);
-    return (sum * 100 / this.filteredSimulations.length).toFixed(2);
+    const sum = this.filteredSimulations.reduce((acc, curr) => acc + curr.tirPercent, 0);
+    return (sum / this.filteredSimulations.length).toFixed(2);
   }
 
-  // Drawer (V15) Handlers
   openDrawer(simulation: SimulationItem, index: number) {
     this.activeSimulation = simulation;
     this.activeDrawerIndex = index;
@@ -652,31 +659,31 @@ export class HistoryComponent implements OnInit {
         if (schedule && schedule.length > 0) {
           // Month 1 details
           const first = schedule[0];
-          this.activeDrawerFirstAmortization = first.regularAmortization;
-          this.activeDrawerFirstInterest = first.regularInterest;
-          this.activeDrawerFirstInsurance = first.riskInsurance + first.portes + first.regularDesgravamen;
-          this.activeDrawerFirstCuota = first.regularAmortization + first.regularInterest + this.activeDrawerFirstInsurance;
+          this.activeDrawerFirstAmortization = first.amortization;
+          this.activeDrawerFirstInterest = first.interest;
+          this.activeDrawerFirstInsurance = first.vehicleInsurance + first.commission + first.creditLifeInsurance;
+          this.activeDrawerFirstCuota = first.payment;
 
           // Month 2 details
           if (schedule.length > 1) {
             const second = schedule[1];
-            this.activeDrawerSecondAmortization = second.regularAmortization;
-            this.activeDrawerSecondInterest = second.regularInterest;
-            this.activeDrawerSecondInsurance = second.riskInsurance + second.portes + second.regularDesgravamen;
-            this.activeDrawerSecondCuota = second.regularAmortization + second.regularInterest + this.activeDrawerSecondInsurance;
+            this.activeDrawerSecondAmortization = second.amortization;
+            this.activeDrawerSecondInterest = second.interest;
+            this.activeDrawerSecondInsurance = second.vehicleInsurance + second.commission + second.creditLifeInsurance;
+            this.activeDrawerSecondCuota = second.payment;
           }
 
           // Last month (Balloon) details
           const last = schedule[schedule.length - 1];
-          this.activeDrawerBalloonInterest = last.balloonInterest;
-          this.activeDrawerBalloonInsurance = last.riskInsurance + last.portes + last.balloonDesgravamen;
-          this.activeDrawerBalloonTotal = last.balloonInitialBalance + last.balloonInterest + this.activeDrawerBalloonInsurance;
+          this.activeDrawerBalloonInterest = last.interest;
+          this.activeDrawerBalloonInsurance = last.vehicleInsurance + last.commission + last.creditLifeInsurance;
+          this.activeDrawerBalloonTotal = last.payment;
         }
         this.isDrawerOpen = true;
       },
       error: () => {
         // Fallback mockup calculation if server recalculation fails
-        const mockFirstCuota = this.activeSimulation.loanAmount * 0.027; // approx monthly payment
+        const mockFirstCuota = this.activeSimulation.financedAmount * 0.027; // approx monthly payment
         this.activeDrawerFirstCuota = mockFirstCuota;
         this.activeDrawerFirstAmortization = mockFirstCuota * 0.5;
         this.activeDrawerFirstInterest = mockFirstCuota * 0.4;
@@ -700,12 +707,11 @@ export class HistoryComponent implements OnInit {
   }
 
   calculateInitialPaymentValue(): number {
-    return this.activeSimulation.vehiclePrice * this.activeSimulation.initialPaymentPercentage;
+    return this.activeSimulation.vehiclePrice * (this.activeSimulation.downPaymentPercent / 100);
   }
 
   calculateBalloonValue(): number {
-    const financedAmount = this.activeSimulation.vehiclePrice * (1 - this.activeSimulation.initialPaymentPercentage);
-    return financedAmount * this.activeSimulation.finalPaymentPercentage;
+    return this.activeSimulation.balloonAmount || 0;
   }
 
   openFullSimulation() {
@@ -723,15 +729,15 @@ export class HistoryComponent implements OnInit {
     let csv = 'ID,Cliente,Vehiculo,Moneda,Monto,Tir,Cuota Balon,Fecha,Estado\n';
     this.filteredSimulations.forEach((sim, idx) => {
       const row = [
-        `SIM-${this.formatId(sim.id)}`,
-        this.getCustomerName(sim.customerId),
+        sim.code || `SIM-${this.formatId(sim.id)}`,
+        this.getCustomerName(sim.clientId),
         this.getVehicleName(sim.vehicleId),
-        sim.vehiclePrice <= 35000 ? 'USD' : 'PEN',
-        sim.loanAmount,
-        this.formatPercentage(sim.tir) + '%',
-        this.formatPercentage(sim.finalPaymentPercentage) + '%',
+        sim.currency || 'PEN',
+        sim.financedAmount,
+        this.formatPercentageValue(sim.tirPercent) + '%',
+        this.formatPercentageValue(sim.balloonPercent) + '%',
         this.getFormattedDate(sim.createdDate, idx),
-        this.getMockStatus(idx)
+        sim.status || this.getMockStatus(idx)
       ];
       csv += row.join(',') + '\n';
     });
@@ -747,9 +753,9 @@ export class HistoryComponent implements OnInit {
   }
 
   downloadExcel(sim: SimulationItem) {
-    const customerName = this.getCustomerName(sim.customerId);
-    const trxId = this.formatId(sim.id);
-    const isSoles = sim.vehiclePrice > 35000;
+    const customerName = this.getCustomerName(sim.clientId);
+    const trxId = sim.code || this.formatId(sim.id);
+    const isSoles = sim.currency === 'PEN';
     const currencySymbol = isSoles ? 'S/' : 'USD';
 
     this.simulationService.getById(sim.id).subscribe({
@@ -823,34 +829,32 @@ export class HistoryComponent implements OnInit {
 
           // Row 4
           setMeta(4, 'A', 'Cliente:', 'B', customerName);
-          setMeta(4, 'F', 'Tasa Base Anual:', 'G', `${sim.interestRateType} ${(sim.interestRate * 100).toFixed(2)}%`);
-          setMeta(4, 'J', 'VAN Deudor:', 'K', sim.van, `$#,##0.00;($#,##0.00);"-"`);
+          setMeta(4, 'F', 'Tasa Base Anual:', 'G', `TEA ${res.teaPercent}%`);
+          setMeta(4, 'J', 'VAN Deudor:', 'K', res.van, `$#,##0.00;($#,##0.00);"-"`);
 
           // Row 5
-          const carName = sim.name.replace('Simulación ', '');
-          setMeta(5, 'A', 'Vehículo:', 'B', this.getVehicleName(sim.vehicleId));
-          setMeta(5, 'F', 'Tasa Periodo (TEM):', 'G', sim.tem, '0.0000%');
-          setMeta(5, 'J', 'TIR de Operación:', 'K', sim.tir, '0.00%');
+          setMeta(5, 'A', 'Vehículo:', 'B', this.getVehicleName(res.vehicleId));
+          setMeta(5, 'F', 'Tasa Periodo (TEM):', 'G', res.temPercent / 100, '0.0000%');
+          setMeta(5, 'J', 'TIR de Operación:', 'K', res.tirPercent / 100, '0.00%');
 
           // Row 6
-          setMeta(6, 'A', 'Precio:', 'B', sim.vehiclePrice, `$#,##0.00`);
-          const graceText = sim.gracePeriods && sim.gracePeriods.includes('P') ? 'Parcial' : sim.gracePeriods && sim.gracePeriods.includes('T') ? 'Total' : 'Sin gracia';
-          setMeta(6, 'F', 'Período Gracia:', 'G', graceText);
-          setMeta(6, 'J', 'TCEA Proyectada:', 'K', sim.tcea, '0.00%');
+          setMeta(6, 'A', 'Precio:', 'B', res.vehiclePrice, `$#,##0.00`);
+          setMeta(6, 'F', 'Período Gracia:', 'G', res.graceType);
+          setMeta(6, 'J', 'TCEA Proyectada:', 'K', res.tceaPercent / 100, '0.00%');
 
           // Row 7
-          setMeta(7, 'A', 'Cuota Inicial:', 'B', sim.vehiclePrice * sim.initialPaymentPercentage, `$#,##0.00`);
-          setMeta(7, 'F', 'Seg. Desgravamen:', 'G', sim.desgravamenRate, '0.000%');
+          setMeta(7, 'A', 'Cuota Inicial:', 'B', res.vehiclePrice * (res.downPaymentPercent / 100), `$#,##0.00`);
+          setMeta(7, 'F', 'Seg. Desgravamen:', 'G', res.creditLifeInsuranceMonthlyPercent / 100, '0.000%');
           setMeta(7, 'J', 'Moneda:', 'K', currencySymbol);
 
           // Row 8
-          setMeta(8, 'A', 'Monto Préstamo:', 'B', sim.loanAmount, `$#,##0.00`);
-          setMeta(8, 'F', 'Seguro Vehicular:', 'G', sim.riskInsuranceRate * sim.vehiclePrice / 12, `$#,##0.00`);
-          setMeta(8, 'J', 'Plazo (Meses):', 'K', sim.termMonths);
+          setMeta(8, 'A', 'Monto Préstamo:', 'B', res.financedAmount, `$#,##0.00`);
+          setMeta(8, 'F', 'Seguro Vehicular:', 'G', (res.vehicleInsuranceAnnualPercent / 100) * res.vehiclePrice / 12, `$#,##0.00`);
+          setMeta(8, 'J', 'Plazo (Meses):', 'K', res.termMonths);
 
           // Row 9
-          setMeta(9, 'A', 'Cuota Balón:', 'B', sim.loanAmount * sim.finalPaymentPercentage, `$#,##0.00`);
-          setMeta(9, 'F', 'Portes:', 'G', sim.portesFee, `$#,##0.00`);
+          setMeta(9, 'A', 'Cuota Balón:', 'B', res.balloonAmount, `$#,##0.00`);
+          setMeta(9, 'F', 'Portes:', 'G', 10.0, `$#,##0.00`);
 
           worksheet.addRow([]);
           worksheet.addRow([]);
@@ -874,20 +878,18 @@ export class HistoryComponent implements OnInit {
           let totalAmortization = 0;
           let totalCuota = 0;
 
-          const filteredSchedule = schedule.filter((item: any) => item.month > 0);
-
-          filteredSchedule.forEach((item: any) => {
-            const isBal = item.month === sim.termMonths;
-            const initial = item.regularInitialBalance + item.balloonInitialBalance;
-            const interest = item.regularInterest + item.balloonInterest;
-            const desgravamen = item.regularDesgravamen + item.balloonDesgravamen;
-            const insurance = item.riskInsurance;
-            const portes = item.portes;
-            const amortization = item.regularAmortization + item.balloonAmortization;
-            const final = item.regularFinalBalance + item.balloonFinalBalance;
+          schedule.forEach((item: any) => {
+            const isBal = item.period === res.termMonths;
+            const initial = item.initialBalance;
+            const interest = item.interest;
+            const desgravamen = item.creditLifeInsurance;
+            const insurance = item.vehicleInsurance;
+            const portes = item.commission;
+            const amortization = item.amortization;
+            const final = item.finalBalance;
             
-            const cuota = Math.abs(item.netCashFlow);
-            const dateStr = this.getPaymentDateForExcel(item.month, sim.createdDate);
+            const cuota = item.payment;
+            const dateStr = item.date;
 
             totalInterest += interest;
             totalDesgravamen += desgravamen;
@@ -897,7 +899,7 @@ export class HistoryComponent implements OnInit {
             totalCuota += cuota;
 
             const row = worksheet.addRow([
-              item.month,
+              item.period,
               dateStr,
               initial,
               interest,
@@ -907,7 +909,7 @@ export class HistoryComponent implements OnInit {
               amortization,
               cuota,
               final,
-              isBal ? 'BALON' : item.graceType
+              isBal && res.balloonAmount > 0 ? 'BALON' : item.graceType
             ]);
 
             row.height = 20;
@@ -996,5 +998,10 @@ export class HistoryComponent implements OnInit {
 
   formatPercentage(val: number): string {
     return (val * 100).toFixed(2);
+  }
+
+  formatPercentageValue(val: number): string {
+    if (val == null) return '0.00';
+    return Number(val).toFixed(2);
   }
 }

@@ -4,9 +4,15 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 export interface LoginResponse {
-  token: string;
-  type: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  userId: number;
   username: string;
+  email: string;
+  role: string;
+  expiresAt: string;
+  permissions: string[];
 }
 
 @Injectable({
@@ -20,8 +26,8 @@ export class AuthService {
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.AUTH_URL}/login`, { username, password }).pipe(
       tap(response => {
-        if (response && response.token) {
-          this.saveToken(response.token, response.username);
+        if (response && response.accessToken) {
+          this.saveToken(response.accessToken, response.username);
         }
       })
     );
@@ -32,12 +38,14 @@ export class AuthService {
   }
 
   saveToken(token: string, username: string): void {
+    if (!token || token === 'undefined') return;
     localStorage.setItem('token', token);
     localStorage.setItem('username', username);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    const t = localStorage.getItem('token');
+    return t === 'undefined' ? null : t;
   }
 
   getUsername(): string | null {
@@ -45,7 +53,8 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return !!this.getToken();
+    const token = this.getToken();
+    return !!token && token !== 'undefined';
   }
 
   logout(): void {

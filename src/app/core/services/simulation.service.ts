@@ -4,31 +4,70 @@ import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
 
 export interface SimulationRequestPayload {
-  name: string;
-  vehiclePrice: number;
-  initialPaymentPercentage: number;
-  finalPaymentPercentage: number;
-  termMonths: number;
-  interestRate: number;
-  interestRateType: string;
-  capitalizationType: string;
-  paymentFrequency: number;
-  daysPerYear: number;
-  notaryCost: number;
-  registrationCost: number;
-  appraisalCost: number;
-  studyCommission: number;
-  activationCommission: number;
-  gpsFee: number;
-  portesFee: number;
-  adminFee: number;
-  desgravamenRate: number;
-  riskInsuranceRate: number;
-  cokRate: number;
-  customerId: number;
+  clientId: number;
   vehicleId: number;
   financialEntityId: number;
-  gracePeriods: string[];
+  vehiclePrice: number;
+  currency: string;
+  teaPercent: number;
+  downPaymentPercent: number;
+  termMonths: number;
+  cokTeaPercent: number;
+  firstPaymentDate: string;
+  paymentDay: number;
+  graceType: 'NONE' | 'PARTIAL' | 'TOTAL';
+  graceMonths: number;
+  balloonPercent: number;
+  creditLifeInsuranceEnabled: boolean;
+  creditLifeInsuranceMonthlyPercent: number;
+  vehicleInsuranceEnabled: boolean;
+  vehicleInsuranceAnnualPercent: number;
+}
+
+export interface SimulationScheduleRow {
+  period: number;
+  date: string;
+  initialBalance: number;
+  payment: number;
+  balloonPayment: number;
+  interest: number;
+  amortization: number;
+  insurance: number;
+  creditLifeInsurance: number;
+  vehicleInsurance: number;
+  commission: number;
+  totalPayment: number;
+  finalFlow: number;
+  baseFlow: number;
+  finalBalance: number;
+  graceType: string;
+}
+
+export interface SimulationResponse {
+  id?: number;
+  code?: string;
+  currency: string;
+  vehiclePrice: number;
+  downPaymentAmount: number;
+  financedAmount: number;
+  balloonPercent: number;
+  /** Monto absoluto de la cuota balón calculado por el backend */
+  balloonAmount: number;
+  termMonths: number;
+  teaPercent: number;
+  temPercent: number;
+  cokTeaPercent: number;
+  cokTemPercent: number;
+  regularInstallment: number;
+  monthlyPayment: number;
+  van: number;
+  tirPercent: number;
+  tceaPercent: number;
+  totalInterest: number;
+  totalInsurance: number;
+  totalFees: number;
+  totalPayment: number;
+  schedule: SimulationScheduleRow[];
 }
 
 @Injectable({
@@ -46,12 +85,12 @@ export class SimulationService {
     });
   }
 
-  create(request: SimulationRequestPayload): Observable<any> {
-    return this.http.post<any>(this.API_URL, request, { headers: this.getHeaders() });
+  create(request: SimulationRequestPayload): Observable<SimulationResponse> {
+    return this.http.post<SimulationResponse>(this.API_URL, request, { headers: this.getHeaders() });
   }
 
-  getAll(): Observable<any[]> {
-    return this.http.get<any[]>(this.API_URL, { headers: this.getHeaders() });
+  getAll(page = 0, size = 20): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}?page=${page}&size=${size}`, { headers: this.getHeaders() });
   }
 
   getById(id: number): Observable<any> {
