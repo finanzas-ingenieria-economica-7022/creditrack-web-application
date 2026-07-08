@@ -105,8 +105,50 @@ export class SimulationWizardComponent implements OnInit {
   fetchCatalogs() {
     this.customerService.getAll().subscribe({ next: (data) => { this.customers = data; if (!this.customers.length) this.seedMockCustomers(); }, error: () => this.seedMockCustomers() });
     this.vehicleService.getAll().subscribe({ next: (data) => { this.vehicles = data; if (!this.vehicles.length) this.seedMockVehicles(); }, error: () => this.seedMockVehicles() });
+    
+    // Load preferences from localStorage (Interbank/BCP and default values)
+    const savedPrefs = localStorage.getItem('creditrack_prefs');
+    let prefBankId: number | null = null;
+    let prefTea: number | null = null;
+    let prefCok: number | null = null;
+    let prefDesg: number | null = null;
+    let prefVeh: number | null = null;
+    let prefTerm: number | null = null;
+    let prefCurrency: string | null = null;
+
+    if (savedPrefs) {
+      try {
+        const p = JSON.parse(savedPrefs);
+        prefBankId = p.defaultBankId ? Number(p.defaultBankId) : null;
+        prefTea = p.defaultTea != null ? Number(p.defaultTea) : null;
+        prefCok = p.defaultCok != null ? Number(p.defaultCok) : null;
+        prefDesg = p.defaultDesgravamen != null ? Number(p.defaultDesgravamen) : null;
+        prefVeh = p.defaultInsurance != null ? Number(p.defaultInsurance) : null;
+        prefTerm = p.defaultTerm != null ? Number(p.defaultTerm) : null;
+        prefCurrency = p.defaultCurrency || null;
+      } catch {}
+    }
+
     this.financialEntityService.getAll().subscribe({
-      next: (entities) => { this.financialEntities = entities; if (entities.length > 0) { this.defaultEntityId = entities[0].id || 1; } else { this.financialEntityService.create({ name: 'Interbank', standardTea: 14.0 }).subscribe({ next: (saved) => { this.defaultEntityId = saved.id || 1; } }); } },
+      next: (entities) => {
+        this.financialEntities = entities;
+        if (entities.length > 0) {
+          const found = entities.find(e => e.id === prefBankId);
+          this.defaultEntityId = found ? (found.id || 1) : (entities[0].id || 1);
+        } else {
+          this.financialEntityService.create({ name: 'Interbank', standardTea: 14.0 }).subscribe({
+            next: (saved) => { this.defaultEntityId = saved.id || 1; }
+          });
+        }
+
+        // Apply default simulation preferences to the form
+        if (prefTea !== null) this.simulationForm.patchValue({ teaPercent: prefTea });
+        if (prefCok !== null) this.simulationForm.patchValue({ cokTeaPercent: prefCok });
+        if (prefDesg !== null) this.simulationForm.patchValue({ creditLifeInsuranceMonthlyPercent: prefDesg });
+        if (prefVeh !== null) this.simulationForm.patchValue({ vehicleInsuranceAnnualPercent: prefVeh });
+        if (prefTerm !== null) this.simulationForm.patchValue({ termMonths: prefTerm });
+        if (prefCurrency !== null) this.simulationForm.patchValue({ currency: prefCurrency });
+      },
       error: () => { this.defaultEntityId = 1; }
     });
   }

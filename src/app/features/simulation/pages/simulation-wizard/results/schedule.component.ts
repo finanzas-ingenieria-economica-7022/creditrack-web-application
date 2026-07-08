@@ -31,7 +31,7 @@ import { SimulationResponse, SimulationScheduleRow } from '../../../../../core/s
         </div>
         <div class="bg-dark-card border border-dark-border rounded-xl p-5 space-y-1">
           <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Cuota Mensual</span>
-          <div class="text-lg font-bold text-white">{{ formatCurrencySymbol() }} {{ formatMoney(result?.regularInstallment) }}</div>
+          <div class="text-lg font-bold text-white">{{ formatCurrencySymbol() }} {{ formatMoney(result?.monthlyPayment) }}</div>
         </div>
         <div class="bg-dark-card border border-dark-border rounded-xl p-5 space-y-1 relative">
           <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Cuota Balon</span>

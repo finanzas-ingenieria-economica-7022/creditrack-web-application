@@ -59,6 +59,7 @@ export interface SimulationResponse {
   cokTeaPercent: number;
   cokTemPercent: number;
   regularInstallment: number;
+  monthlyPayment: number;
   van: number;
   tirPercent: number;
   tceaPercent: number;
