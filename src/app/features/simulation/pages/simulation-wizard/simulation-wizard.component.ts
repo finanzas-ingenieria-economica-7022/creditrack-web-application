@@ -52,7 +52,7 @@ import { SimulationIndicatorsComponent } from './results/indicators.component';
       <!-- Main Step Render Container -->
       <div class="max-w-6xl mx-auto">
         <app-simulation-step1 *ngIf="currentStep === 1" [parentForm]="simulationForm" [customers]="customers" [vehicles]="vehicles" (next)="nextStep()"></app-simulation-step1>
-        <app-simulation-step2 *ngIf="currentStep === 2" [parentForm]="simulationForm" (prev)="prevStep()" (next)="nextStep()"></app-simulation-step2>
+        <app-simulation-step2 *ngIf="currentStep === 2" [parentForm]="simulationForm" [selectedBankName]="getSelectedBankName()" (prev)="prevStep()" (next)="nextStep()"></app-simulation-step2>
         <app-simulation-step3 *ngIf="currentStep === 3" [parentForm]="simulationForm" [customers]="customers" [vehicles]="vehicles" [loading]="loading" (prev)="prevStep()" (calculate)="runSimulation()"></app-simulation-step3>
         <app-simulation-schedule *ngIf="currentStep === 4" [result]="simulationResult" [customerName]="getSelectedCustomerName()" (viewIndicators)="goToIndicators()" (newSimulation)="resetWizard()"></app-simulation-schedule>
         <app-simulation-indicators *ngIf="currentStep === 5" [result]="simulationResult" [customerName]="getSelectedCustomerName()" [parentForm]="simulationForm" (back)="backToSchedule()"></app-simulation-indicators>
@@ -190,6 +190,11 @@ export class SimulationWizardComponent implements OnInit {
     const id = Number(this.simulationForm.get('customerId')?.value);
     const customer = this.customers.find(c => c.id === id);
     return customer ? `${customer.firstName} ${customer.lastName}` : '';
+  }
+
+  getSelectedBankName(): string {
+    const bank = this.financialEntities.find(e => e.id === this.defaultEntityId);
+    return bank ? bank.name : '';
   }
 
   runSimulation() {
