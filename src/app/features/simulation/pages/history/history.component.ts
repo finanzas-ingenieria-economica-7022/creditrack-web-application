@@ -622,7 +622,7 @@ export class HistoryComponent implements OnInit {
   }
 
   getPageNumbers(): number[] {
-    const arr = [];
+    const arr: number[] = [];
     for (let i = 1; i <= this.totalPages; i++) arr.push(i);
     return arr;
   }

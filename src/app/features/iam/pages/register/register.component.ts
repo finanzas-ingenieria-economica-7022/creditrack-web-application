@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
+import { Component } from '@angular/core';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 
@@ -9,180 +9,88 @@ import { AuthService } from '../../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-dark-bg px-4 py-8">
-      <div class="w-full max-w-2xl bg-dark-card border border-dark-border rounded-xl p-8 shadow-2xl">
-        <!-- Header -->
-        <div class="text-center mb-6">
-          <div class="flex justify-center items-center space-x-3 mb-2">
-            <div class="w-10 h-10 bg-brand-primary rounded-lg flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <div>
-              <h1 class="text-white font-bold text-2xl tracking-wide leading-none">CrediTrack</h1>
-              <span class="text-xs text-gray-500 block text-left">Internal Banking</span>
-            </div>
+    <div class="iam-screen py-8">
+      <div class="iam-card iam-card-wide px-8 py-8 sm:px-10">
+        <div class="text-center">
+          <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-primary shadow-lg shadow-blue-500/20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
           </div>
-          <p class="text-sm text-gray-400">Registro de nuevo asesor autorizado</p>
+          <h1 class="text-2xl font-bold tracking-tight text-white">CrediTrack</h1>
+          <p class="text-xs text-gray-500">Internal Banking</p>
+          <p class="mt-3 text-sm text-gray-400">Registro de nuevo asesor autorizado</p>
         </div>
 
-        <hr class="border-dark-border mb-6" />
+        <div class="my-6 h-px bg-dark-border"></div>
 
-        <!-- Form -->
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
-          
-          <!-- Grid container for fields -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Nombres -->
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Nombres</label>
-              <input
-                type="text"
-                formControlName="firstName"
-                placeholder="Juan Carlos"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['firstName'].errors }"
-              />
-              <div *ngIf="submitted && f['firstName'].errors" class="text-red-500 text-xs mt-1">
-                <span>El nombre es obligatorio.</span>
-              </div>
+              <label class="iam-label" for="firstName">Nombres</label>
+              <input id="firstName" type="text" formControlName="firstName" placeholder="Juan Carlos" class="iam-input" [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['firstName'].invalid }" />
+              <p *ngIf="submitted && f['firstName'].errors" class="mt-1 text-xs text-red-400">El nombre es obligatorio.</p>
             </div>
 
-            <!-- Apellidos -->
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Apellidos</label>
-              <input
-                type="text"
-                formControlName="lastName"
-                placeholder="Pérez Gómez"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['lastName'].errors }"
-              />
-              <div *ngIf="submitted && f['lastName'].errors" class="text-red-500 text-xs mt-1">
-                <span>El apellido es obligatorio.</span>
-              </div>
+              <label class="iam-label" for="lastName">Apellidos</label>
+              <input id="lastName" type="text" formControlName="lastName" placeholder="Pérez Gómez" class="iam-input" [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['lastName'].invalid }" />
+              <p *ngIf="submitted && f['lastName'].errors" class="mt-1 text-xs text-red-400">El apellido es obligatorio.</p>
             </div>
 
-            <!-- Tipo de Documento -->
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Tipo de Documento</label>
-              <select
-                formControlName="documentType"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white focus:outline-none focus:border-brand-primary transition duration-150 cursor-pointer"
-              >
+              <label class="iam-label" for="documentType">Tipo de documento</label>
+              <select id="documentType" formControlName="documentType" class="iam-input cursor-pointer">
                 <option value="DNI">DNI (Documento Nacional de Identidad)</option>
                 <option value="RUC">RUC (Registro Único de Contribuyentes)</option>
                 <option value="CE">CE (Carné de Extranjería)</option>
               </select>
             </div>
 
-            <!-- Número de Documento -->
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Número de Documento</label>
-              <input
-                type="text"
-                formControlName="documentNumber"
-                placeholder="70123456"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['documentNumber'].errors }"
-              />
-              <div *ngIf="submitted && f['documentNumber'].errors" class="text-red-500 text-xs mt-1">
-                <span>El número de documento es obligatorio.</span>
-              </div>
+              <label class="iam-label" for="documentNumber">Número de documento</label>
+              <input id="documentNumber" type="text" formControlName="documentNumber" placeholder="70123456" class="iam-input" [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['documentNumber'].invalid }" />
+              <p *ngIf="submitted && f['documentNumber'].errors" class="mt-1 text-xs text-red-400">El número de documento es obligatorio.</p>
             </div>
 
-            <!-- Teléfono -->
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Número de Teléfono</label>
-              <input
-                type="text"
-                formControlName="phoneNumber"
-                placeholder="987654321"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['phoneNumber'].errors }"
-              />
-              <div *ngIf="submitted && f['phoneNumber'].errors" class="text-red-500 text-xs mt-1">
-                <span>El teléfono es obligatorio.</span>
-              </div>
+              <label class="iam-label" for="phoneNumber">Número de teléfono</label>
+              <input id="phoneNumber" type="text" formControlName="phoneNumber" placeholder="987654321" class="iam-input" [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['phoneNumber'].invalid }" />
+              <p *ngIf="submitted && f['phoneNumber'].errors" class="mt-1 text-xs text-red-400">El teléfono es obligatorio.</p>
             </div>
 
-            <!-- Correo Electrónico -->
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Correo Electrónico</label>
-              <input
-                type="email"
-                formControlName="email"
-                placeholder="asesor@banco.com.pe"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['email'].errors }"
-              />
-              <div *ngIf="submitted && f['email'].errors" class="text-red-500 text-xs mt-1">
-                <span *ngIf="f['email'].errors['required']">El correo es obligatorio.</span>
-                <span *ngIf="f['email'].errors['email']">Ingrese un correo válido.</span>
-              </div>
+              <label class="iam-label" for="email">Correo electrónico</label>
+              <input id="email" type="email" formControlName="email" placeholder="asesor@banco.com.pe" class="iam-input" [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['email'].invalid }" />
+              <p *ngIf="submitted && f['email'].errors" class="mt-1 text-xs text-red-400">
+                <span *ngIf="f['email'].errors?.['required']">El correo es obligatorio.</span>
+                <span *ngIf="f['email'].errors?.['email']">Ingresa un correo válido.</span>
+              </p>
             </div>
 
-            <!-- Contraseña -->
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Contraseña</label>
-              <input
-                type="password"
-                formControlName="password"
-                placeholder="••••••••"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['password'].errors }"
-              />
-              <div *ngIf="submitted && f['password'].errors" class="text-red-500 text-xs mt-1">
-                <span *ngIf="f['password'].errors['required']">La contraseña es obligatoria.</span>
-                <span *ngIf="f['password'].errors['minlength']">La contraseña debe tener mínimo 6 caracteres.</span>
-              </div>
+              <label class="iam-label" for="password">Contraseña</label>
+              <input id="password" type="password" formControlName="password" placeholder="••••••••" class="iam-input" [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && f['password'].invalid }" />
+              <p *ngIf="submitted && f['password'].errors" class="mt-1 text-xs text-red-400">
+                <span *ngIf="f['password'].errors?.['required']">La contraseña es obligatoria.</span>
+                <span *ngIf="f['password'].errors?.['minlength']">La contraseña debe tener mínimo 6 caracteres.</span>
+              </p>
             </div>
 
-            <!-- Confirmar Contraseña -->
             <div>
-              <label class="block text-xs font-semibold text-gray-400 tracking-wider uppercase mb-2">Confirmar Contraseña</label>
-              <input
-                type="password"
-                formControlName="confirmPassword"
-                placeholder="••••••••"
-                class="w-full px-4 py-3 bg-dark-input border border-dark-border rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-brand-primary transition duration-150"
-                [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && registerForm.errors?.['mismatch'] }"
-              />
-              <div *ngIf="submitted && registerForm.errors?.['mismatch']" class="text-red-500 text-xs mt-1">
-                <span>Las contraseñas no coinciden.</span>
-              </div>
+              <label class="iam-label" for="confirmPassword">Confirmar contraseña</label>
+              <input id="confirmPassword" type="password" formControlName="confirmPassword" placeholder="••••••••" class="iam-input" [ngClass]="{ 'border-red-500 focus:border-red-500': submitted && registerForm.errors?.['mismatch'] }" />
+              <p *ngIf="submitted && registerForm.errors?.['mismatch']" class="mt-1 text-xs text-red-400">Las contraseñas no coinciden.</p>
             </div>
           </div>
 
-          <!-- Alert Cards -->
-          <div *ngIf="registerError" class="bg-status-rejected-bg border border-red-900 rounded-lg p-4 text-white flex items-start space-x-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-status-rejected-text flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-            <div class="text-xs">
-              <p class="font-bold text-white mb-0.5">Error en el registro.</p>
-              <p class="text-gray-300">{{ errorMessage }}</p>
-            </div>
+          <div *ngIf="registerError" class="rounded-xl border border-red-900 bg-status-rejected-bg/80 p-4 text-sm text-gray-100">
+            <p class="font-semibold text-white">No se pudo registrar el usuario.</p>
+            <p class="mt-1 text-xs text-gray-300">{{ errorMessage }}</p>
           </div>
 
-          <div *ngIf="successMessage" class="bg-status-completed-bg border border-emerald-900 rounded-lg p-4 text-white flex items-start space-x-3">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-status-completed-text flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            <div class="text-xs">
-              <p class="font-bold text-white mb-0.5">¡Registro completado!</p>
-              <p class="text-gray-200">Redirigiendo a la pantalla de inicio de sesión...</p>
-            </div>
-          </div>
-
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            [disabled]="loading"
-            class="w-full py-3 bg-brand-primary hover:bg-brand-hover text-white font-bold rounded-lg transition duration-150 flex items-center justify-center space-x-2 disabled:opacity-50"
-          >
-            <svg *ngIf="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <button type="submit" [disabled]="loading" class="iam-button-primary flex items-center justify-center gap-2">
+            <svg *ngIf="loading" class="h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -190,12 +98,10 @@ import { AuthService } from '../../../../core/services/auth.service';
           </button>
         </form>
 
-        <!-- Back to login link -->
-        <div class="mt-6 text-center">
-          <p class="text-xs text-gray-400">
-            ¿Ya tienes una cuenta? <a routerLink="/login" class="text-brand-text hover:underline font-semibold ml-1">Inicia sesión aquí</a>
-          </p>
-        </div>
+        <p class="mt-6 text-center text-xs text-gray-400">
+          ¿Ya tienes una cuenta?
+          <a routerLink="/login" class="font-semibold text-brand-text hover:underline">Inicia sesión aquí</a>
+        </p>
       </div>
     </div>
   `
@@ -206,7 +112,6 @@ export class RegisterComponent {
   loading = false;
   registerError = false;
   errorMessage = '';
-  successMessage = false;
 
   constructor(
     private fb: FormBuilder,
@@ -216,7 +121,7 @@ export class RegisterComponent {
     this.registerForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      documentType: ['DNI'],
+      documentType: ['DNI', Validators.required],
       documentNumber: ['', Validators.required],
       phoneNumber: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -229,13 +134,13 @@ export class RegisterComponent {
     return this.registerForm.controls;
   }
 
-  passwordMatchValidator(g: AbstractControl) {
-    const password = g.get('password')?.value;
-    const confirmPassword = g.get('confirmPassword')?.value;
+  passwordMatchValidator(control: AbstractControl) {
+    const password = control.get('password')?.value;
+    const confirmPassword = control.get('confirmPassword')?.value;
     return password === confirmPassword ? null : { mismatch: true };
   }
 
-  onSubmit() {
+  onSubmit(): void {
     this.submitted = true;
     this.registerError = false;
 
@@ -244,31 +149,35 @@ export class RegisterComponent {
     }
 
     this.loading = true;
-    const val = this.registerForm.value;
-
-    const requestPayload = {
-      username: val.email, // Set username to email for consistency
-      email: val.email,
-      password: val.password,
-      firstName: val.firstName,
-      lastName: val.lastName,
-      documentType: val.documentType,
-      documentNumber: val.documentNumber,
-      phoneNumber: val.phoneNumber
+    const values = this.registerForm.getRawValue() as {
+      firstName: string;
+      lastName: string;
+      documentType: string;
+      documentNumber: string;
+      phoneNumber: string;
+      email: string;
+      password: string;
+      confirmPassword: string;
     };
 
-    this.authService.register(requestPayload).subscribe({
+    this.authService.register({
+      username: values.email,
+      email: values.email,
+      password: values.password,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      documentType: values.documentType,
+      documentNumber: values.documentNumber,
+      phoneNumber: values.phoneNumber
+    }).subscribe({
       next: () => {
         this.loading = false;
-        this.successMessage = true;
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2000);
+        void this.router.navigate(['/dashboard']);
       },
-      error: (err) => {
+      error: (error) => {
         this.loading = false;
         this.registerError = true;
-        this.errorMessage = err.error || 'Hubo un error de conexión con el servidor.';
+        this.errorMessage = error?.error?.message ?? 'Hubo un error de conexión con el servidor.';
       }
     });
   }
