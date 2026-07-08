@@ -8,6 +8,14 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div [formGroup]="parentForm" class="space-y-6">
+      <!-- Bank parameters load badge -->
+      <div *ngIf="selectedBankName" class="flex items-center space-x-2 bg-brand-primary/10 border border-brand-primary/20 rounded-lg p-3 text-xs text-brand-text">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-primary flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Valores pre-cargados por defecto basados en las preferencias configuradas para: <strong class="text-white font-semibold">{{ selectedBankName }}</strong></span>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         <!-- Left Column: Rates & Grace -->
@@ -136,6 +144,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 })
 export class SimulationStep2Component implements OnInit {
   @Input() parentForm!: FormGroup;
+  @Input() selectedBankName = '';
   @Output() prev = new EventEmitter<void>();
   @Output() next = new EventEmitter<void>();
 
